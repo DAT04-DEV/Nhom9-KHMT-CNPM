@@ -1,6 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 import os
+from pathlib import Path
 from uuid import UUID
 
 from flask import Flask, g, jsonify, redirect, render_template, request, url_for
@@ -11,6 +12,7 @@ from auth import (
     authenticate,
     clear_auth_cookie,
     create_token,
+    get_current_account,
     invalidate_tokens,
     json_error,
     login_required,
@@ -20,8 +22,23 @@ from auth import (
     set_auth_cookie,
 )
 from db import DatabaseNotConfigured, fetch_all
+from services.data_service import CashlessDataService, FilterParams
 
 
+# ── Data service (CSV-based dashboard) ──────────────────────────────────────
+CSV_PATH = Path(__file__).resolve().parent / "vn_cashless_2026.csv"
+data_service = CashlessDataService(CSV_PATH)
+
+
+def _build_filters() -> FilterParams:
+    return FilterParams(
+        location=request.args.get("location") or None,
+        payment_method=request.args.get("payment_method") or None,
+        merchant_category=request.args.get("merchant_category") or None,
+    )
+
+
+# ── JSON helpers ─────────────────────────────────────────────────────────────
 def json_safe(value):
     if isinstance(value, (datetime, date)):
         return value.isoformat()
@@ -39,9 +56,15 @@ def row_to_json(row: dict):
 def create_app() -> Flask:
     app = Flask(__name__)
 
+    # ── Page routes ──────────────────────────────────────────────────────────
+
     @app.get("/")
     def home():
-        return redirect(url_for("dashboard_page"))
+        """Trang chủ: nếu đã đăng nhập thì vào dashboard, chưa thì vào login."""
+        account = get_current_account()
+        if account:
+            return render_template("index.html")
+        return redirect(url_for("login_page"))
 
     @app.get("/login")
     def login_page():
@@ -51,24 +74,61 @@ def create_app() -> Flask:
     def register_page():
         return render_template("register.html")
 
-    @app.get("/dashboard")
-    def dashboard_page():
-        return render_template("dashboard.html")
-
     @app.get("/profile")
     def profile_page():
         return render_template("profile.html")
 
+    @app.get("/dashboard")
+    def dashboard_page():
+        return render_template("dashboard.html")
+
+    @app.get("/users")
+    def users_page():
+        return render_template("users.html")
+
+    @app.get("/transactions")
+    def transactions_page():
+        return render_template("transactions.html")
+
+    @app.get("/predictions")
+    def predictions_page():
+        return render_template("predictions.html")
+
+    @app.get("/insights")
+    def insights_page():
+        return render_template("insights.html")
+
+    @app.get("/about")
+    def about_page():
+        return render_template("about.html")
+
+    @app.get("/charts/payment-method")
+    def payment_method_page():
+        return render_template("payment_method.html")
+
+    @app.get("/charts/category-spend")
+    def category_spend_page():
+        return render_template("category_spend.html")
+
+    @app.get("/charts/trend")
+    def trend_page():
+        return render_template("trend.html")
+
+    @app.get("/charts/location-sales")
+    def location_sales_page():
+        return render_template("location_sales.html")
+
+    # ── Auth API ─────────────────────────────────────────────────────────────
+
     @app.get("/api/health")
     def health():
-        return jsonify({"ok": True, "service": "fraud-auth"})
+        return jsonify({"ok": True, "service": "fraud-detection"})
 
     @app.post("/api/auth/register")
     def register():
         account, error, status = register_account(request.get_json(silent=True) or {})
         if error:
             return json_error(error, status)
-
         token = create_token(account)
         response = jsonify({"ok": True, "account": account_to_public(account)})
         return set_auth_cookie(response, token), status
@@ -79,7 +139,6 @@ def create_app() -> Flask:
         account = authenticate(payload.get("email", ""), payload.get("password", ""))
         if not account:
             return json_error("Invalid email or password.", 401)
-
         token = create_token(account)
         response = jsonify({"ok": True, "account": account_to_public(account)})
         return set_auth_cookie(response, token)
@@ -110,9 +169,10 @@ def create_app() -> Flask:
         )
         return jsonify({"ok": True, "accounts": [account_to_public(row) for row in accounts]})
 
-    @app.get("/api/transactions")
+    @app.get("/api/db-transactions")
     @login_required
-    def list_transactions():
+    def list_db_transactions():
+        """Giao dịch lấy từ database (scoped theo role)."""
         sql, params = scoped_transactions_query(g.account)
         try:
             rows = fetch_all(sql, params)
@@ -123,10 +183,104 @@ def create_app() -> Flask:
             )
         except errors.UndefinedColumn:
             return json_error(
-                "Transaction table does not match the expected columns: merchant_id, transaction_time, amount.",
+                "Transaction table does not match the expected columns.",
                 503,
             )
         return jsonify({"ok": True, "transactions": [row_to_json(row) for row in rows]})
+
+    # ── CSV Dashboard API ─────────────────────────────────────────────────────
+
+    @app.get("/api/filters")
+    def filters():
+        return jsonify(data_service.list_filter_values())
+
+    @app.get("/api/summary")
+    def summary():
+        return jsonify(data_service.get_summary(_build_filters()))
+
+    @app.get("/api/distributions")
+    def distributions():
+        return jsonify(data_service.get_distributions(_build_filters()))
+
+    @app.get("/api/trend")
+    def trend():
+        time_granularity = request.args.get("time_granularity", "month")
+        return jsonify(data_service.get_trend(_build_filters(), time_granularity))
+
+    @app.get("/api/hourly-distribution")
+    def hourly_distribution():
+        return jsonify(data_service.get_hourly_distribution(_build_filters()))
+
+    @app.get("/api/user-analytics")
+    def user_analytics():
+        return jsonify(data_service.get_user_analytics(_build_filters()))
+
+    @app.get("/api/transactions")
+    def transactions_api():
+        search = request.args.get("search", "")
+        sort_by = request.args.get("sort_by", "Timestamp")
+        sort_order = request.args.get("sort_order", "desc")
+        page = int(request.args.get("page", 1))
+        page_size = int(request.args.get("page_size", 20))
+        return jsonify(
+            data_service.get_transactions(
+                _build_filters(),
+                search=search,
+                sort_by=sort_by,
+                sort_order=sort_order,
+                page=page,
+                page_size=page_size,
+            )
+        )
+
+    @app.get("/api/ai-insights")
+    def ai_insights_api():
+        return jsonify({"insights": data_service.get_ai_insights(_build_filters())})
+
+    @app.get("/api/segmentation")
+    def segmentation_api():
+        return jsonify(data_service.get_ml_customer_segments())
+
+    @app.get("/api/sankey")
+    def sankey_api():
+        return jsonify(data_service.get_sankey_data(_build_filters()))
+
+    @app.get("/api/funnel")
+    def funnel_api():
+        return jsonify(data_service.get_funnel_data(_build_filters()))
+
+    @app.get("/api/settings/current-dataset")
+    def current_dataset():
+        return jsonify({"filename": data_service.csv_path.name})
+
+    @app.post("/api/settings/change-dataset")
+    def change_dataset():
+        target = request.json.get("target")
+        base_path = Path(__file__).resolve().parent
+        if target == "enhanced":
+            new_path = base_path / "vn_cashless_enhanced_2026.csv"
+        else:
+            new_path = base_path / "vn_cashless_2026.csv"
+        if new_path.exists():
+            data_service.change_csv(new_path)
+            return jsonify({"success": True, "filename": new_path.name})
+        return jsonify({"success": False, "error": "File not found"}), 404
+
+    @app.post("/api/settings/upload-csv")
+    def upload_csv():
+        if "file" not in request.files:
+            return jsonify({"success": False, "error": "No file part"}), 400
+        file = request.files["file"]
+        if file.filename == "":
+            return jsonify({"success": False, "error": "No selected file"}), 400
+        if file and file.filename.endswith(".csv"):
+            upload_path = Path(__file__).resolve().parent / "uploaded_data.csv"
+            file.save(str(upload_path))
+            data_service.change_csv(upload_path)
+            return jsonify({"success": True, "filename": file.filename})
+        return jsonify({"success": False, "error": "Invalid file format"}), 400
+
+    # ── Error handlers ────────────────────────────────────────────────────────
 
     @app.errorhandler(DatabaseNotConfigured)
     def db_not_configured(error):
@@ -136,7 +290,6 @@ def create_app() -> Flask:
 
 
 app = create_app()
-
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=int(os.getenv("PORT", "5000")), debug=True)

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Dự đoán{% endblock %}
+
+{% block content %}
+  <section class="glass header-predict">
+    <div class="row items-center justify-between">
+      <div>
+        <h2>Trung tâm Trí tuệ Nhân tạo (AI Center)</h2>
+        <p>Phân tích chuyên sâu hành vi người dùng bằng thuật toán Unsupervised Learning.</p>
+      </div>
+      <div class="status-badge">Model: K-Means Cluster</div>
+    </div>
+  </section>
+
+  <!-- Forecast Chart: full width, tall container -->
+  <article class="chart-card glass">
+    <h3>Dự báo chi tiêu (LSTM Baseline)</h3>
+    <div style="position: relative; width: 100%; height: 380px;">
+      <canvas id="forecastChart"></canvas>
+    </div>
+  </article>
+
+  <!-- K-Means Chart -->
+  <article class="chart-card glass">
+    <h3>Phân khúc khách hàng (K-Means)</h3>
+    <div class="chart-square-wrap square">
+      <canvas id="kmeansChart"></canvas>
+    </div>
+  </article>
+
+  <section class="glass table-section" style="margin-top: 2rem;">
+    <h3>Chi tiết Phân cụm RFM (Recency - Frequency - Monetary)</h3>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Phân khúc</th>
+            <th>Số lượng User</th>
+            <th>Độ mới (Avg Days)</th>
+            <th>Tần suất (Avg Txns)</th>
+            <th>Chi tiêu trung bình</th>
+          </tr>
+        </thead>
+        <tbody id="segmentSummaryTable">
+          <!-- Data populated by JS -->
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="{{ url_for('static', filename='js/pages/predictions.js') }}"></script>
+{% endblock %}

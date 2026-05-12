@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Giao dịch{% endblock %}
+
+{% block content %}
+  <section class="glass">
+    <div class="btn-holder">
+      <input id="txSearch" class="search-input" style="min-width: 300px;" placeholder="Tìm theo user, transaction, category..." />
+      <select id="txSortBy">
+        <option value="Timestamp">Thời gian</option>
+        <option value="Amount_VND">Giá trị</option>
+        <option value="User_ID">Người dùng</option>
+      </select>
+      <select id="txSortOrder">
+        <option value="desc">Giảm dần</option>
+        <option value="asc">Tăng dần</option>
+      </select>
+      <button id="txReload" class="btn-primary" type="button">Tải lại</button>
+    </div>
+  </section>
+
+  <section class="glass table-wrap">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h3 style="margin: 0;">Lịch sử giao dịch</h3>
+      <div id="txCount" class="tooltip-info">Đang tải...</div>
+    </div>
+    
+    <table id="txTable">
+      <thead>
+        <tr>
+          <th>Mã giao dịch</th>
+          <th>Người dùng</th>
+          <th>Số tiền</th>
+          <th>Thời gian</th>
+          <th>Phương thức</th>
+          <th>Danh mục</th>
+          <th>Địa điểm</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="table-pagination" style="margin-top: 20px;">
+      <button id="txPrev" class="btn-secondary" type="button">Trước</button>
+      <span id="txPage" style="font-weight: 600;">Trang 1</span>
+      <button id="txNext" class="btn-secondary" type="button">Sau</button>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script type="module" src="{{ url_for('static', filename='js/pages/transactions.js') }}"></script>
+{% endblock %}

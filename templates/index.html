@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Phân tích thanh toán không tiền mặt 2026{% endblock %}
+
+{% block filter_bar %}
+  <!-- Empty block: We place filters inside content for custom positioning on Home page -->
+{% endblock %}
+
+{% block content %}
+  <section class="hero glass">
+    <h1>Phân tích thanh toán không tiền mặt Việt Nam 2026</h1>
+    <p>Phân tích hành vi thanh toán không tiền mặt tại Việt Nam</p>
+    <div class="btn-holder">
+      <a class="btn-primary" href="/dashboard">Khám phá bảng điều khiển</a>
+      <a class="btn-secondary" href="/insights">Xem nhận định AI</a>
+    </div>
+  </section>
+
+  <!-- Filter bar positioned between Hero and Stats/Charts -->
+  <section class="quick-filter-bar glass">
+    <div class="location-buttons" id="quickLocationList">
+      <button class="loc-btn active" data-loc="">Tất cả</button>
+      <button class="loc-btn" data-loc="Hà Nội">Hà Nội</button>
+      <button class="loc-btn" data-loc="TP.HCM">TP.HCM</button>
+      <button class="loc-btn" data-loc="Bình Dương">Bình Dương</button>
+      <button class="loc-btn" data-loc="Đà Nẵng">Đà Nẵng</button>
+      <button class="loc-btn" data-loc="Hải Phòng">Hải Phòng</button>
+      <button class="loc-btn" data-loc="Cần Thơ">Cần Thơ</button>
+    </div>
+    <div class="quick-dropdowns">
+      <select id="quickPaymentFilter" class="search-input dropdown-select">
+        <option value="">Tất cả thanh toán</option>
+      </select>
+      <select id="quickCategoryFilter" class="search-input dropdown-select">
+        <option value="">Tất cả ngành hàng</option>
+      </select>
+    </div>
+  </section>
+
+  <p id="dashboardMessage" class="dashboard-message" role="status" aria-live="polite"></p>
+
+  <section class="stats-grid">
+    <article class="stat-card glass">
+      <h3>Tổng giá trị giao dịch</h3>
+      <p id="totalGmv" data-countup="currency">0 ₫</p>
+    </article>
+    <article class="stat-card glass">
+      <h3>Số lượng giao dịch</h3>
+      <p id="totalTransactions" data-countup="integer">0</p>
+    </article>
+    <article class="stat-card glass">
+      <h3>Active users</h3>
+      <p id="monthlyActiveUsers" data-countup="integer">0</p>
+    </article>
+    <article class="stat-card glass">
+      <h3>Tăng trưởng (%)</h3>
+      <p id="growthRate" data-countup="percent">0%</p>
+    </article>
+  </section>
+
+  <section class="charts-grid">
+    <article class="chart-card glass">
+      <h3>Xu hướng chi tiêu theo thời gian</h3>
+      <div class="chart-square-wrap" style="aspect-ratio: 16/9; max-height: 350px;">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </article>
+    <article class="chart-card glass">
+      <h3>Phân bổ theo phương thức thanh toán</h3>
+      <div class="chart-square-wrap square">
+        <canvas id="paymentChart"></canvas>
+      </div>
+    </article>
+    <article class="chart-card glass">
+      <h3>Ngành chi tiêu cao nhất</h3>
+      <div class="chart-square-wrap" style="aspect-ratio: 16/9; max-height: 350px;">
+        <canvas id="categoryChart"></canvas>
+      </div>
+    </article>
+    <article class="chart-card glass">
+      <h3>Phân tích địa lý (Phân bổ thực)</h3>
+      <div id="map" style="height: 300px;"></div>
+    </article>
+    <article class="chart-card glass">
+      <h3>Phễu Giao Dịch (Khách hàng trung thành)</h3>
+      <div class="chart-square-wrap" style="aspect-ratio: 16/9; max-height: 350px;">
+        <canvas id="funnelChart"></canvas>
+      </div>
+    </article>
+  </section>
+
+  <section class="insight-list glass" style="margin-top: 0;">
+    <h3>Nhận định AI</h3>
+    <ul id="insightItems"></ul>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script type="module" src="{{ url_for('static', filename='js/pages/home.js') }}"></script>
+{% endblock %}

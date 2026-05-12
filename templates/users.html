@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Phân tích người dùng{% endblock %}
+
+{% block content %}
+  <section class="site-grid">
+    <article class="glass full-width">
+      <h3>Danh sách 10 người dùng chi tiêu cao nhất</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>User ID</th>
+              <th>Tổng chi tiêu</th>
+              <th>Số giao dịch</th>
+              <th>Phương thức ưa thích</th>
+              <th>Phân loại</th>
+            </tr>
+          </thead>
+          <tbody id="topUsersBody"></tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+
+  <section class="charts-grid">
+      <article class="glass full-width">
+        <h3>Phân khúc người dùng</h3>
+        <div class="chart-square-wrap" style="aspect-ratio: 21/9; max-height: 350px;">
+          <canvas id="segmentChart"></canvas>
+        </div>
+      </article>
+    <article class="chart-card glass">
+      <h3>Giờ giao dịch phổ biến</h3>
+      <div class="chart-square-wrap" style="aspect-ratio: 16/9; max-height: 350px;">
+        <canvas id="hourChart"></canvas>
+      </div>
+    </article>
+    <article class="chart-card glass">
+      <h3>Ngày giao dịch trong tuần</h3>
+      <div class="chart-square-wrap" style="aspect-ratio: 16/9; max-height: 350px;">
+        <canvas id="dayChart"></canvas>
+      </div>
+    </article>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="{{ url_for('static', filename='js/pages/users.js') }}"></script>
+{% endblock %}

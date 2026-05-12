@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Nhận định AI{% endblock %}
+
+{% block content %}
+  <section class="glass">
+    <h2>Nhận định tự động</h2>
+    <p>Các insight được tạo từ rule-based engine trên dữ liệu giao dịch hiện tại.</p>
+  </section>
+  <section id="insightCards" class="site-grid"></section>
+  <section class="glass chat-box">
+    <h3>Hỏi dữ liệu (demo)</h3>
+    <input class="search-input" placeholder="Ví dụ: Tôi chi tiêu nhiều nhất vào đâu?" />
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script type="module" src="{{ url_for('static', filename='js/pages/insights.js') }}"></script>
+{% endblock %}

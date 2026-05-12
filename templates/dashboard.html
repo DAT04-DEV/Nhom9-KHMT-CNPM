@@ -1,69 +1,67 @@
-<!doctype html>
-<html lang="vi">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bảng điều khiển</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-</head>
-<body>
-    <header class="topbar">
-        <a class="logo" href="/dashboard">Fraud Detection</a>
-        <nav>
-            <a href="/profile">Profile</a>
-            <button id="logoutButton" class="ghost-button">Đăng xuất</button>
-        </nav>
-    </header>
-    <main class="page-shell">
-        <section class="page-heading">
-            <p class="eyebrow">Dashboard</p>
-            <h1>Phân quyền dữ liệu giao dịch</h1>
-            <p id="scopeText" class="muted">Đang tải tài khoản...</p>
-        </section>
+{% extends "base.html" %}
 
-        <section id="adminPanel" class="content-section hidden">
-            <div class="section-header">
-                <h2>Tài khoản hệ thống</h2>
-                <button id="refreshAccounts" class="small-button">Tải lại</button>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Email</th>
-                            <th>Họ tên</th>
-                            <th>Vai trò</th>
-                            <th>Merchant ID</th>
-                            <th>Lần đăng nhập cuối</th>
-                        </tr>
-                    </thead>
-                    <tbody id="accountsBody"></tbody>
-                </table>
-            </div>
-        </section>
+{% block title %}Bảng điều khiển trung tâm{% endblock %}
 
-        <section class="content-section">
-            <div class="section-header">
-                <h2>Giao dịch được phép xem</h2>
-                <button id="loadTransactions" class="small-button">Tải giao dịch</button>
-            </div>
-            <p id="transactionMessage" class="muted"></p>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Merchant</th>
-                            <th>Thời gian</th>
-                            <th>Số tiền</th>
-                            <th>Trạng thái</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transactionsBody"></tbody>
-                </table>
-            </div>
-        </section>
-    </main>
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-</body>
-</html>
+{% block filter_bar %}
+  <section class="quick-filter-bar glass">
+    <div class="location-buttons" id="quickLocationList">
+      <button class="loc-btn active" data-loc="">Tất cả</button>
+      <button class="loc-btn" data-loc="Hà Nội">Hà Nội</button>
+      <button class="loc-btn" data-loc="TP.HCM">TP.HCM</button>
+      <button class="loc-btn" data-loc="Bình Dương">Bình Dương</button>
+      <button class="loc-btn" data-loc="Đà Nẵng">Đà Nẵng</button>
+      <button class="loc-btn" data-loc="Hải Phòng">Hải Phòng</button>
+      <button class="loc-btn" data-loc="Cần Thơ">Cần Thơ</button>
+    </div>
+    <div class="quick-dropdowns">
+      <select id="quickPaymentFilter" class="search-input dropdown-select">
+        <option value="">Tất cả thanh toán</option>
+      </select>
+      <select id="quickCategoryFilter" class="search-input dropdown-select">
+        <option value="">Tất cả ngành hàng</option>
+      </select>
+    </div>
+  </section>
+{% endblock %}
+
+{% block content %}
+  <section class="content-grid">
+      <article class="chart-card glass full-width">
+        <h3>Chuỗi thời gian giao dịch</h3>
+        <div class="chart-square-wrap" style="aspect-ratio: 21/9; max-height: 350px;">
+          <canvas id="lineChart"></canvas>
+        </div>
+      </article>
+      <article class="chart-card glass full-width">
+        <h3>Chi tiêu theo danh mục ngành hàng</h3>
+        <div class="chart-square-wrap" style="aspect-ratio: 21/9; max-height: 350px;">
+          <canvas id="barChart"></canvas>
+        </div>
+      </article>
+      <article class="chart-card glass full-width">
+        <h3>Phân bố giao dịch theo giờ</h3>
+        <div class="chart-square-wrap" style="aspect-ratio: 21/9; max-height: 350px;">
+          <canvas id="hourDayChart"></canvas>
+        </div>
+      </article>
+      <article class="chart-card glass">
+        <h3>Phân bổ thanh toán (P)</h3>
+        <div class="chart-square-wrap square">
+          <canvas id="pieChart"></canvas>
+        </div>
+        <div id="paymentLegend" class="chart-legend"></div>
+      </article>
+      <article class="chart-card glass">
+        <h3>Phân bổ địa lý (L)</h3>
+        <div class="chart-square-wrap square">
+          <canvas id="geoChart"></canvas>
+        </div>
+        <div id="geoLegend" class="chart-legend"></div>
+      </article>
+    </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+  <script type="module" src="{{ url_for('static', filename='js/pages/dashboard-center.js') }}"></script>
+{% endblock %}

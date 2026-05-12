@@ -1,28 +1,79 @@
-<!doctype html>
-<html lang="vi">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Profile</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-</head>
-<body>
-    <header class="topbar">
-        <a class="logo" href="/dashboard">Fraud Detection</a>
-        <nav>
-            <a href="/dashboard">Dashboard</a>
-            <button id="logoutButton" class="ghost-button">Đăng xuất</button>
-        </nav>
-    </header>
-    <main class="page-shell narrow">
-        <section class="page-heading">
-            <p class="eyebrow">Profile</p>
-            <h1>Thông tin tài khoản</h1>
-        </section>
-        <section class="content-section">
-            <dl id="profileDetails" class="profile-list"></dl>
-        </section>
-    </main>
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Hồ sơ cá nhân - FraudDetect VN{% endblock %}
+
+{% block content %}
+<section class="glass">
+    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+        <div style="width: 80px; height: 80px; background: var(--primary-soft); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700;">
+            <span id="userInitials">U</span>
+        </div>
+        <div>
+            <h1 id="profileFullName" style="margin: 0;">Đang tải...</h1>
+            <p id="profileRole" style="margin: 5px 0 0 0; color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 13px;"></p>
+        </div>
+    </div>
+
+    <div class="site-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+        <article class="stat-card glass">
+            <h3>Email đăng ký</h3>
+            <p id="profileEmail" style="font-size: 18px; color: var(--text);">-</p>
+        </article>
+        <article class="stat-card glass">
+            <h3>Merchant ID</h3>
+            <p id="profileMerchantId" style="font-size: 18px; color: var(--text);">-</p>
+        </article>
+        <article class="stat-card glass">
+            <h3>Ngày tham gia</h3>
+            <p id="profileCreatedAt" style="font-size: 18px; color: var(--text);">-</p>
+        </article>
+        <article class="stat-card glass">
+            <h3>Lần đăng nhập cuối</h3>
+            <p id="profileLastLogin" style="font-size: 18px; color: var(--text);">-</p>
+        </article>
+    </div>
+</section>
+
+<section class="glass" style="margin-top: 24px;">
+    <h3>Quản lý bảo mật</h3>
+    <p style="color: var(--muted);">Bạn có thể thay đổi mật khẩu hoặc cập nhật thông tin tại đây (Tính năng đang phát triển).</p>
+    <button class="btn-secondary" disabled>Đổi mật khẩu</button>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const response = await fetch('/api/me');
+            if (response.ok) {
+                const data = await response.json();
+                const user = data.account;
+
+                document.getElementById('profileFullName').textContent = user.full_name;
+                document.getElementById('profileRole').textContent = user.role;
+                document.getElementById('profileEmail').textContent = user.email;
+                document.getElementById('profileMerchantId').textContent = user.merchant_id || 'Không có';
+                document.getElementById('profileCreatedAt').textContent = new Date(user.created_at).toLocaleDateString('vi-VN', {
+                    year: 'numeric', month: 'long', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+                document.getElementById('profileLastLogin').textContent = user.last_login_at 
+                    ? new Date(user.last_login_at).toLocaleDateString('vi-VN', {
+                        year: 'numeric', month: 'long', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    })
+                    : 'Lần đầu đăng nhập';
+                
+                // Set initials
+                const initials = user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                document.getElementById('userInitials').textContent = initials;
+            } else {
+                window.location.href = '/login';
+            }
+        } catch (err) {
+            console.error('Lỗi khi tải profile:', err);
+        }
+    });
+</script>
+{% endblock %}

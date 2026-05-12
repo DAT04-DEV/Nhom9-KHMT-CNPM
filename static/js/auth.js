@@ -45,7 +45,7 @@ loginForm?.addEventListener("submit", async (event) => {
     setMessage("");
     try {
         await postJson("/api/auth/login", formToObject(loginForm));
-        window.location.href = "/dashboard";
+        window.location.href = "/";
     } catch (error) {
         setMessage(error.message);
     } finally {
@@ -60,7 +60,7 @@ registerForm?.addEventListener("submit", async (event) => {
     setMessage("");
     try {
         await postJson("/api/auth/register", formToObject(registerForm));
-        window.location.href = "/dashboard";
+        window.location.href = "/";
     } catch (error) {
         setMessage(error.message);
     } finally {

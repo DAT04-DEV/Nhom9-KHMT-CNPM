@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Phân tích thanh toán không tiền mặt 2026{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}" />
+    <script defer src="{{ url_for('static', filename='js/site.js') }}"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    {% block head_extra %}{% endblock %}
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <button id="menuToggle" class="btn-secondary" type="button" style="padding: 10px; display: flex; align-items: center; border: none; background: transparent;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <a class="brand" href="/">FraudDetect VN</a>
+        
+        <div class="topbar-actions" style="display: flex; gap: 12px; align-items: center; margin-left: auto; flex: 1; overflow: hidden;">
+          <div class="announcement-bar">
+            <div class="marquee-content">
+              Thông báo của admin: Hệ thống đang cập nhật dữ liệu giao dịch thời gian thực cho năm 2026.
+            </div>
+          </div>
+          <input type="file" id="csvFileInput" accept=".csv" style="display: none;" />
+          <button id="uploadCsvBtn" class="btn-secondary" type="button" title="Chọn file CSV từ máy tính" style="display: flex; align-items: center; gap: 6px; border: 1px solid #ffcc00; color: #ffcc00; background: rgba(255, 204, 0, 0.1);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span id="currentCsvName">Chọn CSV</span>
+          </button>
+          <button id="themeToggle" class="btn-secondary" type="button" title="Sáng/Tối">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          </button>
+          <!-- User Info & Logout (shown when logged in) -->
+          <div id="userInfoBar" style="display:none; align-items:center; gap:8px;">
+            <span id="userDisplayName" style="font-size:13px; font-weight:600; color: var(--muted);"></span>
+            <button id="logoutBtn" class="btn-secondary" type="button" style="font-size:13px; padding: 6px 14px; color: var(--danger); border-color: var(--danger);">Đăng xuất</button>
+          </div>
+          <div id="loginBtnBar" style="display:none;">
+            <a href="/login" class="btn-primary" style="font-size:13px; padding: 6px 14px;">Đăng nhập</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div id="sidebarDrawer" class="sidebar-drawer">
+      <div class="drawer-header">
+        <button id="closeDrawer" class="close-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <nav class="drawer-menu" id="mainMenu">
+        <a href="/">Trang chủ</a>
+        <a href="/dashboard">Bảng điều khiển</a>
+        <a href="/users">Phân tích người dùng</a>
+        <a href="/transactions">Giao dịch</a>
+        <a href="/predictions">Dự đoán</a>
+        <a href="/insights">Nhận định AI</a>
+        <a href="/about">Giới thiệu</a>
+        <a href="/profile">Hồ sơ cá nhân</a>
+      </nav>
+    </div>
+    <div id="drawerOverlay" class="drawer-overlay"></div>
+
+    <main class="page-shell">
+      {% block filter_bar %}{% endblock %}
+      {% block content %}{% endblock %}
+    </main>
+    <script>
+      // Highlight active menu item
+      document.addEventListener('DOMContentLoaded', () => {
+        const path = window.location.pathname;
+        const menuLinks = document.querySelectorAll('#mainMenu a');
+        menuLinks.forEach(link => {
+          if (link.getAttribute('href') === path) {
+            link.classList.add('active');
+          } else {
+            link.classList.remove('active');
+          }
+        });
+
+        // Auth UI: check who's logged in
+        fetch('/api/me', { credentials: 'include' })
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            const userBar = document.getElementById('userInfoBar');
+            const loginBar = document.getElementById('loginBtnBar');
+            const nameSpan = document.getElementById('userDisplayName');
+            if (data && data.ok) {
+              if (userBar) { userBar.style.display = 'flex'; }
+              if (nameSpan) { nameSpan.textContent = data.account.full_name + ' (' + data.account.role + ')'; }
+            } else {
+              if (loginBar) { loginBar.style.display = 'block'; }
+            }
+          })
+          .catch(() => {
+            const loginBar = document.getElementById('loginBtnBar');
+            if (loginBar) loginBar.style.display = 'block';
+          });
+
+        // Logout button
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', async () => {
+            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+            window.location.href = '/login';
+          });
+        }
+      });
+    </script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

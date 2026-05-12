@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Doanh số theo tỉnh/thành phố</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}" />
+  </head>
+  <body>
+    <main class="dashboard-shell">
+      <header class="header glass">
+        <div>
+          <h1>Doanh số theo tỉnh/thành phố</h1>
+          <p>So sánh mức doanh số giữa các địa phương.</p>
+        </div>
+        <div class="filters">
+          <select id="locationFilter"><option value="">Tất cả thành phố</option></select>
+          <select id="paymentFilter"><option value="">Tất cả phương thức</option></select>
+        </div>
+      </header>
+
+      <nav class="page-nav">
+        <a href="/">Trang chủ</a>
+        <a href="/charts/payment-method">Phương thức thanh toán</a>
+        <a href="/charts/category-spend">Danh mục ngành hàng</a>
+        <a href="/charts/trend">Xu hướng thời gian</a>
+      </nav>
+
+      <p id="dashboardMessage" class="dashboard-message" role="status" aria-live="polite"></p>
+
+      <section class="single-chart-grid">
+        <article class="chart-card single-chart-card glass">
+          <h3>Doanh số theo tỉnh/thành phố</h3>
+          <canvas id="chartCanvas"></canvas>
+        </article>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" src="{{ url_for('static', filename='js/pages/location-sales.js') }}"></script>
+  </body>
+</html>
