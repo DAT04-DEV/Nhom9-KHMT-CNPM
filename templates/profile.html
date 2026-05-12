@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <header class="topbar">
+        <a class="logo" href="/dashboard">Fraud Detection</a>
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+            <button id="logoutButton" class="ghost-button">Đăng xuất</button>
+        </nav>
+    </header>
+    <main class="page-shell narrow">
+        <section class="page-heading">
+            <p class="eyebrow">Profile</p>
+            <h1>Thông tin tài khoản</h1>
+        </section>
+        <section class="content-section">
+            <dl id="profileDetails" class="profile-list"></dl>
+        </section>
+    </main>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

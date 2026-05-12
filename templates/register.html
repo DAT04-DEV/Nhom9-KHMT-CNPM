@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Đăng ký</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="auth-page">
+    <main class="auth-shell">
+        <section class="auth-panel wide">
+            <div class="brand-block">
+                <p class="eyebrow">Fraud Detection</p>
+                <h1>Tạo tài khoản</h1>
+            </div>
+            <form id="registerForm" class="form-stack">
+                <div class="form-grid">
+                    <label>
+                        Họ tên
+                        <input name="full_name" type="text" autocomplete="name" required>
+                    </label>
+                    <label>
+                        Email
+                        <input name="email" type="email" autocomplete="email" required>
+                    </label>
+                    <label>
+                        Mật khẩu
+                        <input name="password" type="password" autocomplete="new-password" minlength="8" required>
+                    </label>
+                    <label>
+                        Vai trò
+                        <select name="role" id="roleSelect">
+                            <option value="user">User</option>
+                            <option value="merchant">Merchant</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </label>
+                    <label id="merchantField">
+                        Merchant ID
+                        <input name="merchant_id" type="text" placeholder="VD: MCH_001">
+                    </label>
+                    <label id="inviteField" class="hidden">
+                        Mã mời Admin
+                        <input name="invite_code" type="password">
+                    </label>
+                </div>
+                <p id="formMessage" class="message" aria-live="polite"></p>
+                <button type="submit">Tạo tài khoản</button>
+            </form>
+            <p class="switch-link">Đã có tài khoản? <a href="/login">Đăng nhập</a></p>
+        </section>
+    </main>
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+</body>
+</html>

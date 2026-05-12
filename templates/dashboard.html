@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bảng điều khiển</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <header class="topbar">
+        <a class="logo" href="/dashboard">Fraud Detection</a>
+        <nav>
+            <a href="/profile">Profile</a>
+            <button id="logoutButton" class="ghost-button">Đăng xuất</button>
+        </nav>
+    </header>
+    <main class="page-shell">
+        <section class="page-heading">
+            <p class="eyebrow">Dashboard</p>
+            <h1>Phân quyền dữ liệu giao dịch</h1>
+            <p id="scopeText" class="muted">Đang tải tài khoản...</p>
+        </section>
+
+        <section id="adminPanel" class="content-section hidden">
+            <div class="section-header">
+                <h2>Tài khoản hệ thống</h2>
+                <button id="refreshAccounts" class="small-button">Tải lại</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Họ tên</th>
+                            <th>Vai trò</th>
+                            <th>Merchant ID</th>
+                            <th>Lần đăng nhập cuối</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountsBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <div class="section-header">
+                <h2>Giao dịch được phép xem</h2>
+                <button id="loadTransactions" class="small-button">Tải giao dịch</button>
+            </div>
+            <p id="transactionMessage" class="muted"></p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Merchant</th>
+                            <th>Thời gian</th>
+                            <th>Số tiền</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
