@@ -3,54 +3,353 @@
 {% block title %}Dự đoán{% endblock %}
 
 {% block content %}
-  <section class="glass header-predict">
-    <div class="row items-center justify-between">
+<section class="glass header-predict">
+  <div class="row items-center justify-between">
+    <div>
+      <h2>Trung tâm Trí tuệ Nhân tạo (AI Center)</h2>
+      <p>Phân tích hành vi & Phát hiện gian lận bằng các thuật toán Học máy chuyên sâu.</p>
+    </div>
+    <div class="status-badge">AI Models: Decision Tree & Random Forest</div>
+  </div>
+</section>
+
+<!-- Forecast Chart: full width, tall container -->
+<article class="chart-card glass">
+  <h3>Dự báo chi tiêu (Mô hình LSTM)</h3>
+  <div style="position: relative; width: 100%; height: 380px;">
+    <canvas id="forecastChart"></canvas>
+  </div>
+</article>
+
+<!-- K-Means Chart -->
+<article class="chart-card glass">
+  <h3>Phân khúc khách hàng (K-Means)</h3>
+  <div class="chart-square-wrap square">
+    <canvas id="kmeansChart"></canvas>
+  </div>
+</article>
+
+<section class="glass table-section" style="margin-top: 2rem;">
+  <h3>Chi tiết Phân cụm RFM (Recency - Frequency - Monetary)</h3>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Phân khúc</th>
+          <th>Số lượng User</th>
+          <th>Độ mới (Avg Days)</th>
+          <th>Tần suất (Avg Txns)</th>
+          <th>Chi tiêu trung bình</th>
+        </tr>
+      </thead>
+      <tbody id="segmentSummaryTable">
+        <!-- Data populated by JS -->
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- MODEL TRAINING & SIMULATOR SECTION -->
+<div id="adminModelConfig" class="hidden glass"
+  style="margin-top: 2rem; padding: 16px; border: 1px dashed var(--primary); display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;">
+  <div>
+    <h3 style="margin-bottom: 4px; color: var(--primary);">⚙️ Cấu hình Mô hình Hoạt động</h3>
+    <p style="font-size: 13px; color: var(--muted); margin: 0;">Mô hình bạn chọn dưới đây sẽ được hiển thị và áp dụng
+      cho toàn bộ người dùng trên hệ thống.</p>
+  </div>
+  <select id="activeModelSelector" class="search-input dropdown-select"
+    style="max-width: 250px !important; width: 100% !important;">
+    <option value="decision_tree">Cây quyết định (Decision Tree)</option>
+    <option value="random_forest">Rừng ngẫu nhiên (Random Forest)</option>
+  </select>
+</div>
+
+<section class="charts-grid"
+  style="margin-top: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); align-items: start;">
+
+  <!-- MODEL 1: DECISION TREE -->
+  <article class="glass model-container" id="dtContainer" data-model="decision_tree">
+    <div
+      style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 16px;">
       <div>
-        <h2>Trung tâm Trí tuệ Nhân tạo (AI Center)</h2>
-        <p>Phân tích chuyên sâu hành vi người dùng bằng thuật toán Unsupervised Learning.</p>
+        <h3 style="margin: 0; color: var(--primary);">Cây quyết định (Decision Tree)</h3>
+        <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">max_depth = 4</div>
       </div>
-      <div class="status-badge">Model: K-Means Cluster</div>
+      <button class="action-btn train-btn" data-model="decision_tree">
+        <svg style="width:16px;height:16px;fill:currentColor;margin-right:6px;" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+        </svg>
+        Huấn luyện Model
+      </button>
     </div>
-  </section>
 
-  <!-- Forecast Chart: full width, tall container -->
-  <article class="chart-card glass">
-    <h3>Dự báo chi tiêu (LSTM Baseline)</h3>
-    <div style="position: relative; width: 100%; height: 380px;">
-      <canvas id="forecastChart"></canvas>
+    <!-- Metrics Card -->
+    <div class="metrics-card hidden" style="margin-bottom: 20px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+        <div style="background: rgba(16,185,129,0.08); padding: 12px; border-radius: 6px; text-align: center;">
+          <div style="font-size: 11px; color: var(--muted);">Độ chính xác (Accuracy)</div>
+          <div class="metric-accuracy" style="font-size: 20px; font-weight: 700; color: #10b981;">0.0%</div>
+        </div>
+        <div style="background: rgba(37,99,235,0.08); padding: 12px; border-radius: 6px; text-align: center;">
+          <div style="font-size: 11px; color: var(--muted);">F1-Score</div>
+          <div class="metric-f1" style="font-size: 20px; font-weight: 700; color: #2563eb;">0.0%</div>
+        </div>
+      </div>
+      <div style="font-size: 12px;">
+        <p style="font-weight: 600; margin-bottom: 8px;">Ma trận nhầm lẫn:</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; text-align: center;">
+          <div></div>
+          <div style="color:var(--muted)">Dự đoán Thường</div>
+          <div style="color:var(--muted)">Dự đoán Gian lận</div>
+          <div style="text-align: left;">Thực tế Thường</div>
+          <div class="metric-cm-tn"
+            style="background: var(--surface); padding: 4px; border: 1px solid var(--line); font-weight: 700;">-</div>
+          <div class="metric-cm-fp"
+            style="background: rgba(239,68,68,0.05); padding: 4px; border: 1px solid var(--line); color: #ef4444;">-
+          </div>
+          <div style="text-align: left;">Thực tế Gian lận</div>
+          <div class="metric-cm-fn"
+            style="background: rgba(239,68,68,0.05); padding: 4px; border: 1px solid var(--line); color: #ef4444;">-
+          </div>
+          <div class="metric-cm-tp"
+            style="background: var(--surface); padding: 4px; border: 1px solid var(--line); font-weight: 700;">-</div>
+        </div>
+      </div>
+    </div>
+    <div class="untrained-msg"
+      style="padding: 20px; text-align: center; color: var(--muted); background: rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 20px;">
+      Mô hình chưa được huấn luyện.
+    </div>
+
+    <!-- Simulator Form -->
+    <div style="border-top: 1px solid var(--line); padding-top: 16px;">
+      <h4 style="margin-bottom: 12px;">Trình giả lập</h4>
+      <form class="simulator-form" data-model="decision_tree" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: grid; grid-template-columns: minmax(0,2fr) minmax(90px,120px); gap: 12px;">
+          <div>
+            <label style="font-size: 12px; display: block; margin-bottom: 4px;">Số tiền (VND):</label>
+            <input type="number" name="amount" class="search-input" value="500000" min="0" required
+              style="width: 100% !important;" />
+          </div>
+          <div>
+            <label style="font-size: 12px; display: block; margin-bottom: 4px;">Giờ (0-23):</label>
+            <input type="number" name="hour" class="search-input" value="14" min="0" max="23" required
+              style="width: 100% !important;" />
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label style="font-size: 12px; display: block; margin-bottom: 4px;">Ngày:</label>
+            <select name="is_weekend" class="search-input dropdown-select" style="width: 100% !important;">
+              <option value="0">Trong tuần</option>
+              <option value="1">Cuối tuần</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; display: block; margin-bottom: 4px;">Thanh toán:</label>
+            <select name="payment_method" class="search-input dropdown-select" style="width: 100% !important;">
+              <option value="Ví điện tử">Ví điện tử</option>
+              <option value="Thẻ tín dụng">Thẻ tín dụng</option>
+              <option value="Chuyển khoản">Chuyển khoản</option>
+            </select>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label style="font-size: 12px; display: block; margin-bottom: 4px;">Ngành hàng:</label>
+            <select name="merchant_category" class="search-input dropdown-select" style="width: 100% !important;">
+              <option value="Ăn uống">Ăn uống</option>
+              <option value="Mua sắm">Mua sắm</option>
+              <option value="Siêu thị">Siêu thị</option>
+              <option value="Điện nước">Điện nước</option>
+              <option value="Giao thông">Giao thông</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; display: block; margin-bottom: 4px;">Khu vực:</label>
+            <select name="location" class="search-input dropdown-select" style="width: 100% !important;">
+              <option value="Hà Nội">Hà Nội</option>
+              <option value="TP.HCM">TP.HCM</option>
+              <option value="Đà Nẵng">Đà Nẵng</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="action-btn" style="justify-content: center; width: 100%; margin-top: 4px;">
+          Kiểm tra bằng Decision Tree
+        </button>
+      </form>
+      <div class="prediction-result" style="margin-top: 16px; padding: 12px; border-radius: 8px; display: none;"></div>
     </div>
   </article>
 
-  <!-- K-Means Chart -->
-  <article class="chart-card glass">
-    <h3>Phân khúc khách hàng (K-Means)</h3>
-    <div class="chart-square-wrap square">
-      <canvas id="kmeansChart"></canvas>
+  <!-- MODEL 2: RANDOM FOREST -->
+  <article class="glass model-container" id="rfContainer" data-model="random_forest">
+    <div
+      style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 16px;">
+      <div>
+        <h3 style="margin: 0; color: #a855f7;">Rừng ngẫu nhiên (Random Forest)</h3>
+        <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">n_estimators = 50, max_depth = 4</div>
+      </div>
+      <button class="action-btn train-btn" data-model="random_forest"
+        style="background: #9333ea; border-color: #7e22ce;">
+        <svg style="width:16px;height:16px;fill:currentColor;margin-right:6px;" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+        </svg>
+        Huấn luyện Model
+      </button>
+    </div>
+
+    <!-- Metrics Card -->
+    <div class="metrics-card hidden" style="margin-bottom: 20px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+        <div style="background: rgba(16,185,129,0.08); padding: 12px; border-radius: 6px; text-align: center;">
+          <div style="font-size: 11px; color: var(--muted);">Độ chính xác (Accuracy)</div>
+          <div class="metric-accuracy" style="font-size: 20px; font-weight: 700; color: #10b981;">0.0%</div>
+        </div>
+        <div style="background: rgba(37,99,235,0.08); padding: 12px; border-radius: 6px; text-align: center;">
+          <div style="font-size: 11px; color: var(--muted);">F1-Score</div>
+          <div class="metric-f1" style="font-size: 20px; font-weight: 700; color: #2563eb;">0.0%</div>
+        </div>
+      </div>
+      <div style="font-size: 12px;">
+        <p style="font-weight: 600; margin-bottom: 8px;">Ma trận nhầm lẫn:</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; text-align: center;">
+          <div></div>
+          <div style="color:var(--muted)">Dự đoán Thường</div>
+          <div style="color:var(--muted)">Dự đoán Gian lận</div>
+          <div style="text-align: left;">Thực tế Thường</div>
+          <div class="metric-cm-tn"
+            style="background: var(--surface); padding: 4px; border: 1px solid var(--line); font-weight: 700;">-</div>
+          <div class="metric-cm-fp"
+            style="background: rgba(239,68,68,0.05); padding: 4px; border: 1px solid var(--line); color: #ef4444;">-
+          </div>
+          <div style="text-align: left;">Thực tế Gian lận</div>
+          <div class="metric-cm-fn"
+            style="background: rgba(239,68,68,0.05); padding: 4px; border: 1px solid var(--line); color: #ef4444;">-
+          </div>
+          <div class="metric-cm-tp"
+            style="background: var(--surface); padding: 4px; border: 1px solid var(--line); font-weight: 700;">-</div>
+        </div>
+      </div>
+    </div>
+    <div class="untrained-msg"
+      style="padding: 20px; text-align: center; color: var(--muted); background: rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 20px;">
+      Mô hình chưa được huấn luyện.
+    </div>
+
+    <!-- Simulator Form -->
+    <div style="border-top: 1px solid var(--line); padding-top: 16px;">
+      <h4 style="margin-bottom: 12px;">Trình giả lập</h4>
+      <form class="simulator-form" data-model="random_forest" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+          <div>
+            <label style="font-size: 12px; display: block; margin-bottom: 4px;">Số tiền (VND):</label>
+            <input type="number" name="amount" class="search-input" value="500000" min="0" required
+              style="width: 100% !important;" />
+          </div>
+          <div>
+            <label style="font-size: 12px; display: block; margin-bottom: 4px;">Giờ (0-23):</label>
+            <input type="number" name="hour" class="search-input" value="14" min="0" max="23" required
+              style="width: 100% !important;" />
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label style="font-size: 12px; display: block; margin-bottom: 4px;">Ngày:</label>
+            <select name="is_weekend" class="search-input dropdown-select" style="width: 100% !important;">
+              <option value="0">Trong tuần</option>
+              <option value="1">Cuối tuần</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; display: block; margin-bottom: 4px;">Thanh toán:</label>
+            <select name="payment_method" class="search-input dropdown-select" style="width: 100% !important;">
+              <option value="Ví điện tử">Ví điện tử</option>
+              <option value="Thẻ tín dụng">Thẻ tín dụng</option>
+              <option value="Chuyển khoản">Chuyển khoản</option>
+            </select>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label style="font-size: 12px; display: block; margin-bottom: 4px;">Ngành hàng:</label>
+            <select name="merchant_category" class="search-input dropdown-select" style="width: 100% !important;">
+              <option value="Ăn uống">Ăn uống</option>
+              <option value="Mua sắm">Mua sắm</option>
+              <option value="Siêu thị">Siêu thị</option>
+              <option value="Điện nước">Điện nước</option>
+              <option value="Giao thông">Giao thông</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; display: block; margin-bottom: 4px;">Khu vực:</label>
+            <select name="location" class="search-input dropdown-select" style="width: 100% !important;">
+              <option value="Hà Nội">Hà Nội</option>
+              <option value="TP.HCM">TP.HCM</option>
+              <option value="Đà Nẵng">Đà Nẵng</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="action-btn"
+          style="background: #9333ea; border-color: #7e22ce; justify-content: center; width: 100%; margin-top: 4px;">
+          Kiểm tra bằng Random Forest
+        </button>
+      </form>
+      <div class="prediction-result" style="margin-top: 16px; padding: 12px; border-radius: 8px; display: none;"></div>
     </div>
   </article>
 
-  <section class="glass table-section" style="margin-top: 2rem;">
-    <h3>Chi tiết Phân cụm RFM (Recency - Frequency - Monetary)</h3>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Phân khúc</th>
-            <th>Số lượng User</th>
-            <th>Độ mới (Avg Days)</th>
-            <th>Tần suất (Avg Txns)</th>
-            <th>Chi tiêu trung bình</th>
-          </tr>
-        </thead>
-        <tbody id="segmentSummaryTable">
-          <!-- Data populated by JS -->
-        </tbody>
-      </table>
-    </div>
-  </section>
+</section>
+
+<!-- MODEL COMPARISON SECTION -->
+<section id="comparisonSection" class="glass" style="margin-top: 2rem;">
+  <h3>So sánh Hiệu năng</h3>
+  <div id="comparisonUntrainedMsg"
+    style="text-align: center; color: var(--muted); padding: 20px; background: rgba(0,0,0,0.1); border-radius: 8px;">
+    Vui lòng huấn luyện cả hai mô hình để xem bảng so sánh chi tiết.
+  </div>
+  <div id="comparisonTableContainer" class="table-container hidden">
+    <table>
+      <thead>
+        <tr>
+          <th style="text-align: left;">Chỉ số Đánh giá</th>
+          <th style="text-align: center; color: var(--primary);">Decision Tree</th>
+          <th style="text-align: center; color: #a855f7;">Random Forest</th>
+          <th style="text-align: center;">Đánh giá</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-weight: 600;">Độ chính xác (Accuracy)</td>
+          <td id="compAccDt" style="text-align: center; font-weight: 600;">-</td>
+          <td id="compAccRf" style="text-align: center; font-weight: 600;">-</td>
+          <td id="compAccWinner" style="text-align: center; font-size: 13px;">-</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600;">F1-Score</td>
+          <td id="compF1Dt" style="text-align: center; font-weight: 600;">-</td>
+          <td id="compF1Rf" style="text-align: center; font-weight: 600;">-</td>
+          <td id="compF1Winner" style="text-align: center; font-size: 13px;">-</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600;">Độ chuẩn xác (Precision)</td>
+          <td id="compPrecDt" style="text-align: center; font-weight: 600;">-</td>
+          <td id="compPrecRf" style="text-align: center; font-weight: 600;">-</td>
+          <td id="compPrecWinner" style="text-align: center; font-size: 13px;">-</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600;">Độ phủ (Recall)</td>
+          <td id="compRecDt" style="text-align: center; font-weight: 600;">-</td>
+          <td id="compRecRf" style="text-align: center; font-weight: 600;">-</td>
+          <td id="compRecWinner" style="text-align: center; font-size: 13px;">-</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 {% endblock %}
 
 {% block scripts %}
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script type="module" src="{{ url_for('static', filename='js/pages/predictions.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script type="module" src="{{ url_for('static', filename='js/pages/predictions.js') }}"></script>
 {% endblock %}

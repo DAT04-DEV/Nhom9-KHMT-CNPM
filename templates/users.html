@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Phân tích người dùng{% endblock %}
+{% block title %}Phân tích người dùng - VIETCASH{% endblock %}
 
 {% block content %}
   <section class="site-grid">
@@ -13,7 +13,6 @@
               <th>User ID</th>
               <th>Tổng chi tiêu</th>
               <th>Số giao dịch</th>
-              <th>Phương thức ưa thích</th>
               <th>Phân loại</th>
             </tr>
           </thead>
@@ -24,12 +23,7 @@
   </section>
 
   <section class="charts-grid">
-      <article class="glass full-width">
-        <h3>Phân khúc người dùng</h3>
-        <div class="chart-square-wrap" style="aspect-ratio: 21/9; max-height: 350px;">
-          <canvas id="segmentChart"></canvas>
-        </div>
-      </article>
+
     <article class="chart-card glass">
       <h3>Giờ giao dịch phổ biến</h3>
       <div class="chart-square-wrap" style="aspect-ratio: 16/9; max-height: 350px;">

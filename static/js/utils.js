@@ -26,7 +26,6 @@ export function formatPercent(value) {
 export function formatQueryString(filters) {
   const params = new URLSearchParams();
   if (filters.location) params.set("location", filters.location);
-  if (filters.paymentMethod) params.set("payment_method", filters.paymentMethod);
   params.set("time_granularity", filters.timeGranularity || "month");
   return params.toString();
 }

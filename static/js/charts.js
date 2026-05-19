@@ -2,10 +2,22 @@ import { chartPalette, formatCurrencyVnd } from "./utils.js";
 
 const charts = {};
 
+function getThemeTextColor() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  return isDark ? "#ffffff" : "#000000";
+}
+
+function getThemeGridColor() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  return isDark ? "rgba(148,163,184,0.15)" : "rgba(0,0,0,0.08)";
+}
+
 function buildAxisOptions() {
+  const textColor = getThemeTextColor();
+  const gridColor = getThemeGridColor();
   return {
-    x: { ticks: { color: "#e2e8f0" }, grid: { color: "rgba(148,163,184,0.15)" } },
-    y: { ticks: { color: "#e2e8f0" }, grid: { color: "rgba(148,163,184,0.15)" } },
+    x: { ticks: { color: textColor }, grid: { color: gridColor } },
+    y: { ticks: { color: textColor }, grid: { color: gridColor } },
   };
 }
 
@@ -34,7 +46,7 @@ export function renderDistributionCharts(distribution) {
     },
     options: {
       plugins: {
-        legend: { position: "bottom", labels: { color: "#e2e8f0" } },
+        legend: { position: "bottom", labels: { color: getThemeTextColor() } },
         tooltip: { callbacks: { label: tooltipMoneyLabel } },
       },
     },
@@ -91,7 +103,7 @@ export function renderTrendChart(trendData) {
     options: {
       scales: buildAxisOptions(),
       plugins: {
-        legend: { labels: { color: "#e2e8f0" } },
+        legend: { labels: { color: getThemeTextColor() } },
         tooltip: { callbacks: { label: tooltipMoneyLabel } },
       },
     },

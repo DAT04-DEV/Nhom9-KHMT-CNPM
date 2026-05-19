@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Bảng điều khiển trung tâm{% endblock %}
+{% block title %}Phân tích tổng quan - VIETCASH{% endblock %}
 
 {% block filter_bar %}
   <section class="quick-filter-bar glass">
@@ -8,15 +8,11 @@
       <button class="loc-btn active" data-loc="">Tất cả</button>
       <button class="loc-btn" data-loc="Hà Nội">Hà Nội</button>
       <button class="loc-btn" data-loc="TP.HCM">TP.HCM</button>
-      <button class="loc-btn" data-loc="Bình Dương">Bình Dương</button>
       <button class="loc-btn" data-loc="Đà Nẵng">Đà Nẵng</button>
       <button class="loc-btn" data-loc="Hải Phòng">Hải Phòng</button>
       <button class="loc-btn" data-loc="Cần Thơ">Cần Thơ</button>
     </div>
     <div class="quick-dropdowns">
-      <select id="quickPaymentFilter" class="search-input dropdown-select">
-        <option value="">Tất cả thanh toán</option>
-      </select>
       <select id="quickCategoryFilter" class="search-input dropdown-select">
         <option value="">Tất cả ngành hàng</option>
       </select>
@@ -25,6 +21,26 @@
 {% endblock %}
 
 {% block content %}
+  <!-- Stats Section -->
+  <section class="stats-grid" style="margin-bottom: 24px;">
+    <article class="stat-card glass">
+      <h3>Tổng giá trị giao dịch</h3>
+      <p id="totalGmv" class="reveal-left">0 ₫</p>
+    </article>
+    <article class="stat-card glass">
+      <h3>Số lượng giao dịch</h3>
+      <p id="totalTransactions">0</p>
+    </article>
+    <article class="stat-card glass">
+      <h3>Người dùng hoạt động</h3>
+      <p id="monthlyActiveUsers">0</p>
+    </article>
+    <article class="stat-card glass">
+      <h3>Tỷ lệ giao dịch bất thường</h3>
+      <p id="fraudRate">0%</p>
+    </article>
+  </section>
+
   <section class="content-grid">
       <article class="chart-card glass full-width">
         <h3>Chuỗi thời gian giao dịch</h3>
@@ -44,16 +60,9 @@
           <canvas id="hourDayChart"></canvas>
         </div>
       </article>
-      <article class="chart-card glass">
-        <h3>Phân bổ thanh toán (P)</h3>
-        <div class="chart-square-wrap square">
-          <canvas id="pieChart"></canvas>
-        </div>
-        <div id="paymentLegend" class="chart-legend"></div>
-      </article>
-      <article class="chart-card glass">
+      <article class="chart-card glass full-width">
         <h3>Phân bổ địa lý (L)</h3>
-        <div class="chart-square-wrap square">
+        <div class="chart-square-wrap" style="aspect-ratio: 21/9; max-height: 350px;">
           <canvas id="geoChart"></canvas>
         </div>
         <div id="geoLegend" class="chart-legend"></div>

@@ -11,6 +11,17 @@
     --shadow: 0 18px 45px rgba(23, 32, 51, 0.08);
 }
 
+html[data-theme="dark"] {
+    --bg: #0b1220;
+    --surface: #121a2a;
+    --text: #ffffff;
+    --muted: #9ca3af;
+    --line: #243043;
+    --primary: #60a5fa;
+    --primary-dark: #3b82f6;
+    --shadow: 0 18px 45px rgba(0, 0, 0, 0.5);
+}
+
 * {
     box-sizing: border-box;
 }
@@ -107,7 +118,7 @@ h2 {
 label {
     display: grid;
     gap: 8px;
-    color: #344054;
+    color: var(--text) !important;
     font-weight: 700;
 }
 
@@ -118,7 +129,7 @@ select {
     border: 1px solid var(--line);
     border-radius: 6px;
     padding: 10px 12px;
-    background: #ffffff;
+    background: var(--surface);
     color: var(--text);
 }
 
@@ -309,4 +320,48 @@ th {
         align-items: flex-start;
         flex-direction: column;
     }
+}
+
+/* Predictor Form Layout fixes */
+#fraudPredictorForm input, 
+#fraudPredictorForm select {
+    width: 100% !important;
+    max-width: 220px !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+#predAmount, 
+#predHour {
+    max-width: 110px !important;
+}
+
+#fraudPredictorForm button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 13.5px;
+    padding: 10px 20px !important;
+    border: none !important;
+    border-radius: 6px !important;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease !important;
+    width: fit-content !important;
+    max-width: none !important;
+    min-height: 40px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+#fraudPredictorForm button:hover {
+    background: var(--primary-dark) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12) !important;
+}
+
+#fraudPredictorForm button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
 }

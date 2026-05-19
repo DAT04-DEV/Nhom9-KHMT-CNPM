@@ -4,7 +4,6 @@ import { formatQueryString } from "../utils.js";
 export function getSharedElements() {
   return {
     locationFilter: document.getElementById("locationFilter"),
-    paymentFilter: document.getElementById("paymentFilter"),
     timeGranularity: document.getElementById("timeGranularity"),
     dashboardMessage: document.getElementById("dashboardMessage"),
   };
@@ -18,7 +17,6 @@ export function setMessage(elements, message, variant = "info") {
 export function getFilters(elements) {
   return {
     location: elements.locationFilter?.value || "",
-    paymentMethod: elements.paymentFilter?.value || "",
     timeGranularity: elements.timeGranularity?.value || "month",
   };
 }
@@ -26,7 +24,6 @@ export function getFilters(elements) {
 export async function populateFilters(elements) {
   const data = await getJson("/api/filters");
   data.locations.forEach((value) => appendOption(elements.locationFilter, value));
-  data.payment_methods.forEach((value) => appendOption(elements.paymentFilter, value));
 }
 
 function appendOption(selectEl, value) {
@@ -38,7 +35,7 @@ function appendOption(selectEl, value) {
 }
 
 export function bindFilterEvents(elements, callback) {
-  [elements.locationFilter, elements.paymentFilter, elements.timeGranularity]
+  [elements.locationFilter, elements.timeGranularity]
     .filter(Boolean)
     .forEach((node) => node.addEventListener("change", callback));
 }

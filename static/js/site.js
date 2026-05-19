@@ -11,6 +11,7 @@ if (themeToggle) {
     const next = current === "dark" ? "light" : "dark";
     root.setAttribute("data-theme", next);
     localStorage.setItem("theme", next);
+    window.dispatchEvent(new CustomEvent("filterChanged"));
   });
 }
 
@@ -40,41 +41,35 @@ if (menuToggle && sidebarDrawer && drawerOverlay) {
   drawerOverlay.addEventListener("click", () => toggleDrawer(false));
 }
 
-// Global Filter Logic
-// Global Filter Logic (Updated: 2 Dropdowns + Location Buttons)
+// Global Filter Logic (Updated: Category Dropdown + Location Buttons)
 async function initGlobalFilters() {
-  const paySelect = document.getElementById("quickPaymentFilter");
   const catSelect = document.getElementById("quickCategoryFilter");
   const quickLocBtns = document.querySelectorAll(".loc-btn");
   
-  // 1. Populate Dropdowns if they exist
-  if (paySelect && catSelect) {
+  // 1. Populate Dropdown if it exists
+  if (catSelect) {
     try {
       const res = await fetch("/api/filters");
       if (res.ok) {
         const data = await res.json();
         // Clear options first but keep "Tất cả"
-        paySelect.innerHTML = '<option value="">Tất cả thanh toán</option>';
         catSelect.innerHTML = '<option value="">Tất cả ngành hàng</option>';
         
-        data.payment_methods.forEach(v => paySelect.append(new Option(v, v)));
         if (data.merchant_categories) data.merchant_categories.forEach(v => catSelect.append(new Option(v, v)));
       }
 
       // Sync from URL
       const urlParams = new URLSearchParams(window.location.search);
-      paySelect.value = urlParams.get("payment_method") || "";
       catSelect.value = urlParams.get("merchant_category") || "";
 
       const applyFilters = () => {
         const params = new URLSearchParams(window.location.search);
-        if (paySelect.value) params.set("payment_method", paySelect.value);
-        else params.delete("payment_method");
         if (catSelect.value) params.set("merchant_category", catSelect.value);
         else params.delete("merchant_category");
-        window.location.search = params.toString();
+        const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+        window.history.pushState(null, '', newUrl);
+        window.dispatchEvent(new CustomEvent("filterChanged"));
       };
-      paySelect.addEventListener("change", applyFilters);
       catSelect.addEventListener("change", applyFilters);
     } catch (err) {
       console.error("Filter population failed", err);
@@ -91,13 +86,33 @@ async function initGlobalFilters() {
       btn.classList.toggle("active", btnLoc === currentLoc);
       
       btn.addEventListener("click", () => {
+        // Cập nhật class active ngay lập tức
+        quickLocBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
         const params = new URLSearchParams(window.location.search);
         if (btnLoc) params.set("location", btnLoc);
         else params.delete("location");
-        window.location.search = params.toString();
+        const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+        window.history.pushState(null, '', newUrl);
+        window.dispatchEvent(new CustomEvent("filterChanged"));
       });
     });
   }
+
+  // 3. Listen to popstate event (browser navigation Back/Forward)
+  window.addEventListener("popstate", () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (catSelect) catSelect.value = urlParams.get("merchant_category") || "";
+    if (quickLocBtns.length > 0) {
+      const currentLoc = urlParams.get("location") || "";
+      quickLocBtns.forEach(btn => {
+        const btnLoc = btn.getAttribute("data-loc") || "";
+        btn.classList.toggle("active", btnLoc === currentLoc);
+      });
+    }
+    window.dispatchEvent(new CustomEvent("filterChanged"));
+  });
 }
 
 async function initCsvUploader() {

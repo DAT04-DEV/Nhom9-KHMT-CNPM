@@ -15,32 +15,28 @@ async function init() {
         <td><b>${user.user_id}</b></td>
         <td>${formatCurrencyVnd(user.total_spend)}</td>
         <td>${formatInteger(user.transaction_count)}</td>
-        <td>${user.preferred_payment_method}</td>
         <td><span class="heat-cell" style="padding: 4px 8px; font-size: 11px;">${user.segment}</span></td>
       `;
       tbody.appendChild(tr);
     });
   }
 
+  const textColor = document.documentElement.getAttribute("data-theme") === "dark" ? "#ffffff" : "#000000";
+  const gridColor = document.documentElement.getAttribute("data-theme") === "dark" ? "rgba(148,163,184,0.15)" : "rgba(0,0,0,0.08)";
+
   const commonOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    scales: {
+      x: { ticks: { color: textColor }, grid: { color: gridColor } },
+      y: { ticks: { color: textColor }, grid: { color: gridColor } }
+    },
     plugins: {
-      legend: { labels: { font: { family: 'Inter', size: 12 } } }
+      legend: { labels: { color: textColor, font: { family: 'Inter', size: 12 } } }
     }
   };
 
-  renderSingleChart("segmentChart", {
-    type: "pie",
-    data: {
-      labels: data.segments.map((i) => i.segment),
-      datasets: [{ 
-        data: data.segments.map((i) => i.user_count), 
-        backgroundColor: ["#2563eb", "#10b981", "#f59e0b"] 
-      }],
-    },
-    options: commonOptions
-  });
+
 
   renderSingleChart("hourChart", {
     type: "line",
@@ -72,4 +68,8 @@ async function init() {
 }
 
 init();
+
+window.addEventListener("filterChanged", () => {
+  init();
+});
 

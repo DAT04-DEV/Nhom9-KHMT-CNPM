@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Hồ sơ cá nhân - FraudDetect VN{% endblock %}
+{% block title %}Hồ sơ cá nhân - VIETCASH{% endblock %}
 
 {% block content %}
 <section class="glass">
@@ -30,6 +30,26 @@
     </div>
 </section>
 
+<section id="adminAccountsSection" class="glass" style="margin-top: 24px; display: none;">
+    <h3>Danh sách tài khoản hệ thống (Quản trị viên)</h3>
+    <p style="color: var(--muted); margin-bottom: 1rem;">Danh sách tất cả người dùng và quản trị viên đã đăng ký trong hệ thống.</p>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Họ tên</th>
+                    <th>Vai trò</th>
+                    <th>Lần đăng nhập cuối</th>
+                </tr>
+            </thead>
+            <tbody id="adminAccountsBody">
+                <!-- Data loaded via JS -->
+            </tbody>
+        </table>
+    </div>
+</section>
+
 <section class="glass" style="margin-top: 24px;">
     <h3>Quản lý bảo mật</h3>
     <p style="color: var(--muted);">Bạn có thể thay đổi mật khẩu hoặc cập nhật thông tin tại đây (Tính năng đang phát triển).</p>
@@ -46,8 +66,13 @@
                 const data = await response.json();
                 const user = data.account;
 
+                const roleTranslation = {
+                    'admin': 'Quản trị viên',
+                    'user': 'Người dùng'
+                };
+
                 document.getElementById('profileFullName').textContent = user.full_name;
-                document.getElementById('profileRole').textContent = user.role;
+                document.getElementById('profileRole').textContent = roleTranslation[user.role] || user.role;
                 document.getElementById('profileEmail').textContent = user.email;
                 document.getElementById('profileCreatedAt').textContent = new Date(user.created_at).toLocaleDateString('vi-VN', {
                     year: 'numeric', month: 'long', day: 'numeric',
@@ -63,8 +88,33 @@
                 // Set initials
                 const initials = user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
                 document.getElementById('userInitials').textContent = initials;
+
+                // Load accounts list if admin
+                if (user.role === 'admin') {
+                    document.getElementById('adminAccountsSection').style.display = 'block';
+                    try {
+                        const accRes = await fetch('/api/admin/accounts');
+                        if (accRes.ok) {
+                            const accData = await accRes.json();
+                            const accBody = document.getElementById('adminAccountsBody');
+                            accBody.innerHTML = '';
+                            accData.accounts.forEach(acc => {
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `
+                                    <td><b>${acc.email}</b></td>
+                                    <td>${acc.full_name}</td>
+                                    <td><span class="heat-cell" style="padding: 4px 8px; font-size: 11px;">${roleTranslation[acc.role] || acc.role}</span></td>
+                                    <td>${acc.last_login_at ? new Date(acc.last_login_at).toLocaleString('vi-VN') : 'Chưa đăng nhập'}</td>
+                                `;
+                                accBody.appendChild(tr);
+                            });
+                        }
+                    } catch (err) {
+                        console.error('Lỗi khi tải danh sách tài khoản:', err);
+                    }
+                }
             } else {
-                window.location.href = '/login';
+                window.location.href = '/';
             }
         } catch (err) {
             console.error('Lỗi khi tải profile:', err);

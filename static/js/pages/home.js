@@ -150,11 +150,10 @@ async function init() {
     const qs = window.location.search;
     const trendQs = qs ? qs + "&time_granularity=month" : "?time_granularity=month";
 
-    const [summary, distributions, trend, ai, funnel] = await Promise.all([
+    const [summary, distributions, trend, funnel] = await Promise.all([
       fetchSafe(`/api/summary${qs}`),
       fetchSafe(`/api/distributions${qs}`),
       fetchSafe(`/api/trend${trendQs}`),
-      fetchSafe(`/api/ai-insights${qs}`),
       fetchSafe(`/api/funnel${qs}`),
     ]);
 
@@ -167,9 +166,12 @@ async function init() {
       renderMap(distributions.location_sales);
     }
     
-    renderInsights(ai?.insights || []);
     const growth = summary.fraud_rate > 0 ? Math.max(1, 8 - summary.fraud_rate / 2) : 8.2;
-    animateCount(valueEls.totalGmv, summary.total_gmv || 0, formatCurrencyVnd);
+    valueEls.totalGmv.textContent = formatCurrencyVnd(summary.total_gmv || 0);
+    valueEls.totalGmv.classList.remove("reveal-left");
+    void valueEls.totalGmv.offsetWidth; // Trigger reflow
+    valueEls.totalGmv.classList.add("reveal-left");
+
     animateCount(valueEls.totalTransactions, summary.total_transactions || 0, (v) => formatInteger(Math.round(v)));
     animateCount(valueEls.monthlyActiveUsers, summary.active_users_monthly_avg || 0, (v) =>
       formatInteger(Math.round(v)),
@@ -199,33 +201,6 @@ async function init() {
           }],
         },
         options: commonOptions
-      });
-    }
-
-    if (distributions.payment_method_share) {
-      renderSingleChart("paymentChart", {
-        type: "doughnut",
-        data: {
-          labels: distributions.payment_method_share.map((i) => i.label),
-          datasets: [{ 
-            data: distributions.payment_method_share.map((i) => i.value), 
-            backgroundColor: chartPalette,
-            borderWidth: 0
-          }],
-        },
-        options: {
-          ...commonOptions,
-          cutout: '70%',
-          onClick: (event, elements) => {
-            if (elements.length > 0) {
-              const index = elements[0].index;
-              const method = distributions.payment_method_share[index].label;
-              const params = new URLSearchParams(window.location.search);
-              params.set('payment_method', method);
-              window.location.search = params.toString();
-            }
-          }
-        }
       });
     }
 
@@ -298,4 +273,8 @@ async function init() {
 }
 
 init();
+
+window.addEventListener("filterChanged", () => {
+  init();
+});
 

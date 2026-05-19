@@ -1,8 +1,8 @@
 :root {
   --bg: #f8fafc;
   --surface: #ffffff;
-  --text: #1e293b;
-  --muted: #64748b;
+  --text: #000000;
+  --muted: #000000;
   --border: #e2e8f0;
   --primary: #2563eb;
   --primary-soft: #dbeafe;
@@ -12,8 +12,8 @@
 html[data-theme="dark"] {
   --bg: #0b1220;
   --surface: #121a2a;
-  --text: #e2e8f0;
-  --muted: #94a3b8;
+  --text: #ffffff;
+  --muted: #ffffff;
   --border: #243043;
   --primary: #60a5fa;
   --primary-soft: rgba(96, 165, 250, 0.12);
@@ -69,6 +69,9 @@ select {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 12px;
+}
+.simulator-form .search-input, .simulator-form select {
+  min-width: 0;
 }
 .btn-primary, .btn-secondary {
   border-radius: 8px;
@@ -351,5 +354,18 @@ th { color: var(--muted); font-weight: 600; }
 }
 .stats-grid {
   margin-top: 0 !important;
+}
+
+/* GMV Reveal Animation from Left to Right */
+@keyframes revealFromLeft {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+.reveal-left {
+  animation: revealFromLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 

@@ -1,23 +1,49 @@
 import { getJson } from "../api.js";
 import { renderSingleChart } from "../charts.js";
-import { chartPalette } from "../utils.js";
+import { chartPalette, formatCurrencyVnd, formatInteger, formatPercent } from "../utils.js";
 
 async function loadData() {
   // Get filters from URL
   const urlParams = new URLSearchParams(window.location.search);
   const q = urlParams.toString();
 
-  const [distributions, trend, hourly] = await Promise.all([
+  const [summary, distributions, trend, hourly] = await Promise.all([
+    getJson(`/api/summary?${q}`),
     getJson(`/api/distributions?${q}`),
     getJson(`/api/trend?${q}`),
     getJson(`/api/hourly-distribution?${q}`),
   ]);
 
+  const valueEls = {
+    totalGmv: document.getElementById("totalGmv"),
+    totalTransactions: document.getElementById("totalTransactions"),
+    monthlyActiveUsers: document.getElementById("monthlyActiveUsers"),
+    fraudRate: document.getElementById("fraudRate"),
+  };
+
+  if (valueEls.totalGmv && summary) {
+    valueEls.totalGmv.textContent = formatCurrencyVnd(summary.total_gmv || 0);
+    valueEls.totalGmv.classList.remove("reveal-left");
+    void valueEls.totalGmv.offsetWidth; // Trigger reflow
+    valueEls.totalGmv.classList.add("reveal-left");
+
+    valueEls.totalTransactions.textContent = formatInteger(Math.round(summary.total_transactions || 0));
+    valueEls.monthlyActiveUsers.textContent = formatInteger(Math.round(summary.active_users_monthly_avg || 0));
+    valueEls.fraudRate.textContent = formatPercent(summary.fraud_rate || 0);
+  }
+
+  const textColor = document.documentElement.getAttribute("data-theme") === "dark" ? "#ffffff" : "#000000";
+  const gridColor = document.documentElement.getAttribute("data-theme") === "dark" ? "rgba(148,163,184,0.15)" : "rgba(0,0,0,0.08)";
+
   const commonOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    scales: {
+      x: { ticks: { color: textColor }, grid: { color: gridColor } },
+      y: { ticks: { color: textColor }, grid: { color: gridColor } }
+    },
     plugins: {
-      legend: { labels: { font: { family: 'Inter', size: 12 } } }
+      legend: { labels: { color: textColor, font: { family: 'Inter', size: 12 } } }
     }
   };
 
@@ -51,41 +77,7 @@ async function loadData() {
     options: commonOptions
   });
 
-  renderSingleChart("pieChart", {
-    type: "pie",
-    data: {
-      labels: distributions.payment_method_share.map((_, idx) => `P${idx + 1}`),
-      datasets: [{ data: distributions.payment_method_share.map((i) => i.value), backgroundColor: chartPalette }],
-    },
-    options: {
-      ...commonOptions,
-      maintainAspectRatio: true,
-      plugins: {
-        ...commonOptions.plugins,
-        legend: { position: "bottom" },
-        tooltip: {
-          callbacks: {
-            label: (ctx) => {
-              const item = distributions.payment_method_share[ctx.dataIndex];
-              return `${item.label}: ${item.value.toLocaleString("vi-VN")} ₫`;
-            },
-          },
-        },
-      },
-    },
-  });
 
-  const paymentLegend = document.getElementById("paymentLegend");
-  if (paymentLegend) {
-    paymentLegend.innerHTML = distributions.payment_method_share
-      .map((item, idx) => `
-        <span>
-          <i style="display:inline-block; width:12px; height:12px; background:${chartPalette[idx % chartPalette.length]}; border-radius:3px;"></i>
-          <strong>P${idx + 1}</strong>: ${item.label}
-        </span>
-      `)
-      .join("");
-  }
 
   renderSingleChart("hourDayChart", {
     type: "bar",
@@ -121,7 +113,10 @@ async function loadData() {
     options: {
       ...commonOptions,
       indexAxis: "x",
-      scales: { x: { ticks: { maxRotation: 0, minRotation: 0 } } },
+      scales: {
+        x: { ticks: { color: textColor, maxRotation: 0, minRotation: 0 }, grid: { color: gridColor } },
+        y: { ticks: { color: textColor }, grid: { color: gridColor } }
+      },
       plugins: {
         ...commonOptions.plugins,
         tooltip: {
@@ -151,3 +146,7 @@ async function init() {
   await loadData();
 }
 init();
+
+window.addEventListener("filterChanged", () => {
+  init();
+});

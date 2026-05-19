@@ -52,8 +52,37 @@
 - `static/`: Tài nguyên tĩnh (CSS premium, Javascript, Images).
 - `vn_cashless_2026.csv`: Dữ liệu giao dịch mẫu.
 
+
 ## 🔒 Tài liệu bảo mật
 Chi tiết về các cơ chế mã hóa và chặn truy cập trái phép có thể xem tại: **[SECURITY_DOCUMENTATION.md](./SECURITY_DOCUMENTATION.md)**
 
+
+## 🧠 Phát hiện Gian lận bằng AI (AI Fraud Detector)
+Trang `/predictions` cung cấp **2 mô hình học máy độc lập** — mỗi mô hình có luồng huấn luyện, báo cáo chỉ số, và trình giả lập riêng. Sau khi cả hai được chạy, bảng so sánh hiệu năng sẽ tự động hiển thị.
+
+### Mô hình 1 — Cây quyết định (Decision Tree Classifier)
+* Thuật toán: `DecisionTreeClassifier(max_depth=4)`
+* Nút **"Huấn luyện Model"** (màu xanh) → Huấn luyện và hiển thị: Accuracy, F1-Score, Ma trận nhầm lẫn.
+* Nút **"Kiểm tra bằng Decision Tree"** → Chạy dự đoán và in ra **Luồng suy luận (Decision Rules)** từng bước.
+
+### Mô hình 2 — Rừng ngẫu nhiên (Random Forest Classifier)
+* Thuật toán: `RandomForestClassifier(n_estimators=50, max_depth=4)`
+* Nút **"Huấn luyện Model"** (màu tím) → Huấn luyện và hiển thị: Accuracy, F1-Score, Ma trận nhầm lẫn.
+* Nút **"Kiểm tra bằng Random Forest"** → Chạy dự đoán, quy luật trích từ cây đại diện (`estimators_[0]`).
+
+### So sánh Hiệu năng (Model Comparison)
+Sau khi **cả hai mô hình** đã được huấn luyện, bảng so sánh tự động hiển thị phía dưới, so sánh 4 chỉ số: Accuracy, F1-Score, Precision, Recall — kèm đánh giá mô hình nào vượt trội hơn.
+
+> **Lưu ý:** Khi Admin đổi file CSV, trạng thái huấn luyện của cả hai mô hình sẽ bị **reset** — cần bấm huấn luyện lại.
+
+### Kịch bản kiểm thử mẫu
+
+| Kịch bản | Số tiền (VND) | Giờ | Loại ngày | Phương thức | Ngành hàng | Khu vực | Kết quả |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Nghi vấn gian lận đêm muộn | `5,500,000` | `2` | Cuối tuần | Ví điện tử | Mua sắm | TP.HCM | 🔴 Gian lận |
+| Giao dịch an toàn ban ngày | `450,000` | `14` | Trong tuần | Chuyển khoản | Ăn uống | Hà Nội | 🟢 An toàn |
+| Số tiền nhỏ đêm muộn | `50,000` | `3` | Trong tuần | Ví điện tử | Siêu thị | Đà Nẵng | 🟢 An toàn |
+
 ---
+
 **Nhóm 9 - Khoa học Máy tính & Công nghệ Phần mềm**

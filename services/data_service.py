@@ -30,6 +30,20 @@ class CashlessDataService:
             df["Amount_VND"] = pd.to_numeric(df["Amount_VND"], errors="coerce").fillna(0)
             df["Is_Fraud"] = pd.to_numeric(df["Is_Fraud"], errors="coerce").fillna(0).astype(int)
             df = df.dropna(subset=["Timestamp"])
+            
+            # Dịch các giá trị Category và Payment Method sang Tiếng Việt
+            category_mapping = {
+                "Transport": "Giao thông & Di chuyển",
+                "Utilities": "Điện nước & Tiện ích",
+                "Supermarket": "Siêu thị",
+                "Shopping": "Mua sắm",
+                "Food & Beverage": "Ăn uống",
+            }
+            if "Merchant_Category" in df.columns:
+                df["Merchant_Category"] = df["Merchant_Category"].map(category_mapping).fillna(df["Merchant_Category"])
+            if "Payment_Method" in df.columns:
+                df["Payment_Method"] = df["Payment_Method"].replace({"E-Wallet": "Ví điện tử"})
+                
             self._df = df
         return self._df
 
@@ -170,36 +184,27 @@ class CashlessDataService:
         if df.empty:
             return {"segments": [], "top_users": [], "by_hour": [], "by_day": []}
 
-        user_spend = df.groupby("User_ID", as_index=False)["Amount_VND"].sum()
-        p33 = user_spend["Amount_VND"].quantile(0.33)
-        p66 = user_spend["Amount_VND"].quantile(0.66)
-
-        def classify(value: float) -> str:
-            if value <= p33:
-                return "Người tiết kiệm"
-            if value <= p66:
-                return "Người chi tiêu cân bằng"
-            return "Người chi tiêu mạnh"
-
-        user_spend["segment"] = user_spend["Amount_VND"].apply(classify)
+        # Chạy K-Means phân cụm khách hàng theo RFM
+        rfm_df = self._segmenter.cluster_customers(df)
+        
         segments = (
-            user_spend.groupby("segment", as_index=False)
-            .agg(user_count=("User_ID", "count"), total_spend=("Amount_VND", "sum"))
+            rfm_df.groupby("Segment_Name", as_index=False)
+            .agg(user_count=("User_ID", "count"), total_spend=("Monetary", "sum"))
+            .rename(columns={"Segment_Name": "segment"})
             .sort_values("user_count", ascending=False)
         )
 
-        # Trả về 10 người dùng chi tiêu cao nhất thay vì chỉ 1
-        top_users_df = user_spend.sort_values("Amount_VND", ascending=False).head(10)
+        # Lấy 10 người dùng chi tiêu cao nhất (theo Monetary)
+        top_users_df = rfm_df.sort_values("Monetary", ascending=False).head(10)
         top_users = []
         for _, u_row in top_users_df.iterrows():
             u_id = str(u_row["User_ID"])
-            u_df = df[df["User_ID"] == u_id]
             top_users.append({
                 "user_id": u_id,
-                "total_spend": int(u_row["Amount_VND"]),
-                "transaction_count": int(len(u_df)),
-                "preferred_payment_method": str(u_df["Payment_Method"].mode().iloc[0] if not u_df.empty else "N/A"),
-                "segment": u_row["segment"]
+                "total_spend": int(u_row["Monetary"]),
+                "transaction_count": int(u_row["Frequency"]),
+                "preferred_payment_method": "Ví điện tử",
+                "segment": str(u_row["Segment_Name"])
             })
 
         by_hour = (
@@ -216,6 +221,19 @@ class CashlessDataService:
             .rename(columns={"day": "label", "Transaction_ID": "value"})
             .to_dict(orient="records")
         )
+
+        # Việt hóa tên các ngày trong tuần
+        day_mapping = {
+            "Monday": "Thứ Hai",
+            "Tuesday": "Thứ Ba",
+            "Wednesday": "Thứ Tư",
+            "Thursday": "Thứ Năm",
+            "Friday": "Thứ Sáu",
+            "Saturday": "Thứ Bảy",
+            "Sunday": "Chủ Nhật"
+        }
+        for item in by_day:
+            item["label"] = day_mapping.get(item["label"], item["label"])
 
         return {
             "segments": segments.to_dict(orient="records"),
@@ -281,12 +299,6 @@ class CashlessDataService:
         weekday = df[df["Timestamp"].dt.dayofweek < 5]["Amount_VND"].sum()
         if weekend > weekday * 0.5:
             insights.append("Người dùng có xu hướng chi tiêu mạnh vào cuối tuần.")
-
-        method_share = (
-            df.groupby("Payment_Method")["Amount_VND"].sum().sort_values(ascending=False)
-        )
-        if not method_share.empty:
-            insights.append(f"Phương thức dẫn đầu hiện tại là {method_share.index[0]}.")
 
         peak_hour = int(df["Timestamp"].dt.hour.value_counts().idxmax())
         insights.append(f"Khung giờ hoạt động cao nhất là {peak_hour}:00 - {peak_hour + 1}:00.")

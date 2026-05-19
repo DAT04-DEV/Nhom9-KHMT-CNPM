@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}Phân tích thanh toán không tiền mặt 2026{% endblock %}</title>
+    <title>{% block title %}VIETCASH{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -116,16 +116,16 @@
         <button id="menuToggle" class="btn-secondary" type="button" style="padding: 10px; display: flex; align-items: center; border: none; background: transparent;">
           <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </button>
-        <a class="brand" href="/">FraudDetect VN</a>
+        <a class="brand" href="/">VIETCASH</a>
         
         <div class="topbar-actions" style="display: flex; gap: 12px; align-items: center; margin-left: auto; flex: 1; overflow: hidden;">
           <div class="announcement-bar">
             <div class="marquee-content">
-              Thông báo của admin: Hệ thống đang cập nhật dữ liệu giao dịch thời gian thực cho năm 2026.
+              Thông báo của quản trị viên: Hệ thống đang cập nhật dữ liệu giao dịch thời gian thực cho năm 2026.
             </div>
           </div>
           <input type="file" id="csvFileInput" accept=".csv" style="display: none;" />
-          <button id="uploadCsvBtn" class="btn-secondary" type="button" title="Chọn file CSV từ máy tính" style="display: flex; align-items: center; gap: 6px; border: 1px solid #ffcc00; color: #ffcc00; background: rgba(255, 204, 0, 0.1);">
+          <button id="uploadCsvBtn" class="btn-secondary" type="button" title="Chọn file CSV từ máy tính" style="display: none; align-items: center; gap: 6px; border: 1px solid #ffcc00; color: #ffcc00; background: rgba(255, 204, 0, 0.1);">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             <span id="currentCsvName">Chọn CSV</span>
           </button>
@@ -153,13 +153,13 @@
       </div>
       <nav class="drawer-menu" id="mainMenu">
         <a href="/">Trang chủ</a>
-        <a href="/dashboard">Bảng điều khiển</a>
-        <a href="/users">Phân tích người dùng</a>
-        <a href="/transactions">Giao dịch</a>
+        <a href="/dashboard">Phân tích tổng quan</a>
+        <a href="/users" data-auth-required>Phân tích người dùng</a>
+        <a href="/transactions" data-auth-required>Giao dịch</a>
         <a href="/predictions" data-auth-required>Dự đoán</a>
         <a href="/insights" data-auth-required>Nhận định AI</a>
         <a href="/about">Giới thiệu</a>
-        <a href="/profile">Hồ sơ cá nhân</a>
+        <a href="/profile" data-auth-required>Hồ sơ cá nhân</a>
       </nav>
     </div>
     <div id="drawerOverlay" class="drawer-overlay"></div>
@@ -171,7 +171,7 @@
 
         <div class="auth-modal-brand">
           <div class="brand-icon">🛡️</div>
-          <h2>FraudDetect VN</h2>
+          <h2>VIETCASH</h2>
           <p>Phân tích & phát hiện giao dịch bất thường</p>
         </div>
 
@@ -219,12 +219,12 @@
             <label class="auth-form-label">
               Vai trò
               <select name="role" id="modalRoleSelect">
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
+                <option value="user">Người dùng</option>
+                <option value="admin">Quản trị viên</option>
               </select>
             </label>
             <label class="auth-form-label hidden" id="modalInviteField">
-              Mã mời Admin
+              Mã mời Quản trị viên
               <input name="invite_code" type="password" placeholder="Nhập mã mời">
             </label>
             <p class="auth-msg" id="registerMsg" aria-live="polite"></p>
@@ -239,8 +239,7 @@
     <div id="authGateModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center;">
       <div style="background:var(--surface,#1e1e2e); border:1px solid var(--border,#333); border-radius:16px; padding:2.5rem 2rem; max-width:380px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
         <div style="font-size:3rem; margin-bottom:1rem;">🔒</div>
-        <h2 style="margin:0 0 0.5rem; font-size:1.3rem;">Yêu cầu đăng nhập</h2>
-        <p style="color:var(--muted,#888); margin:0 0 1.5rem; font-size:0.95rem;">Tính năng <strong id="authGateFeatureName"></strong> chỉ dành cho người dùng đã đăng nhập.</p>
+        <h2 style="margin:0 0 1.5rem; font-size:1.3rem;">Bạn cần đăng nhập để sử dụng tính năng này</h2>
         <div style="display:flex; gap:0.75rem; justify-content:center;">
           <button id="authGateCancel" style="padding:0.6rem 1.4rem; border-radius:8px; border:1px solid var(--border,#444); background:transparent; color:var(--text,#eee); cursor:pointer; font-size:0.9rem;">Để sau</button>
           <button id="authGateOpenLogin" style="padding:0.6rem 1.4rem; border-radius:8px; background:var(--primary,#7c6fff); color:#fff; border:none; font-weight:600; font-size:0.9rem; cursor:pointer;">Đăng nhập ngay →</button>
@@ -273,7 +272,14 @@
               const userBar = document.getElementById('userInfoBar');
               const nameSpan = document.getElementById('userDisplayName');
               if (userBar) userBar.style.display = 'flex';
-              if (nameSpan) nameSpan.textContent = data.account.full_name + ' (' + data.account.role + ')';
+              const roleTranslation = { 'admin': 'Quản trị viên', 'user': 'Người dùng' };
+              if (nameSpan) nameSpan.textContent = data.account.full_name + ' (' + (roleTranslation[data.account.role] || data.account.role) + ')';
+              
+              // Hiện nút upload CSV cho admin
+              if (data.account.role === 'admin') {
+                const uploadBtn = document.getElementById('uploadCsvBtn');
+                if (uploadBtn) uploadBtn.style.display = 'flex';
+              }
             } else {
               const loginBar = document.getElementById('loginBtnBar');
               if (loginBar) loginBar.style.display = 'block';
@@ -396,16 +402,12 @@
 
         // ── Auth-gate (protected links) ───────────────
         const authGateModal = document.getElementById('authGateModal');
-        const featureName   = document.getElementById('authGateFeatureName');
-        const featureLabels = { '/predictions': 'Dự đoán AI', '/insights': 'Hỏi dữ liệu / Nhận định AI' };
 
         document.querySelectorAll('[data-auth-required]').forEach(link => {
           link.addEventListener('click', e => {
             if (_isLoggedIn) return;
             e.preventDefault();
-            const dest = link.getAttribute('href');
-            _pendingDest = dest;
-            if (featureName) featureName.textContent = featureLabels[dest] || dest;
+            _pendingDest = link.getAttribute('href');
             authGateModal.style.display = 'flex';
           });
         });

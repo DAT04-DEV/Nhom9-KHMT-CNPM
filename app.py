@@ -24,17 +24,19 @@ from auth import (
 )
 from db import DatabaseNotConfigured, fetch_all
 from services.data_service import CashlessDataService, FilterParams
+from services.fraud_detector_service import FraudDetectorService
 
 
 # ── Data service (CSV-based dashboard) ──────────────────────────────────────
 CSV_PATH = Path(__file__).resolve().parent / "vn_cashless_2026.csv"
 data_service = CashlessDataService(CSV_PATH)
+fraud_detector = FraudDetectorService(CSV_PATH)
 
 
 def _build_filters() -> FilterParams:
     return FilterParams(
         location=request.args.get("location") or None,
-        payment_method=request.args.get("payment_method") or None,
+        payment_method=None,
         merchant_category=request.args.get("merchant_category") or None,
     )
 
@@ -75,6 +77,7 @@ def create_app() -> Flask:
         return redirect(url_for("home"), 301)
 
     @app.get("/profile")
+    @page_login_required
     def profile_page():
         return render_template("profile.html")
 
@@ -83,10 +86,12 @@ def create_app() -> Flask:
         return render_template("dashboard.html")
 
     @app.get("/users")
+    @page_login_required
     def users_page():
         return render_template("users.html")
 
     @app.get("/transactions")
+    @page_login_required
     def transactions_page():
         return render_template("transactions.html")
 
@@ -104,9 +109,6 @@ def create_app() -> Flask:
     def about_page():
         return render_template("about.html")
 
-    @app.get("/charts/payment-method")
-    def payment_method_page():
-        return render_template("payment_method.html")
 
     @app.get("/charts/category-spend")
     def category_spend_page():
@@ -243,6 +245,80 @@ def create_app() -> Flask:
     def segmentation_api():
         return jsonify(data_service.get_ml_customer_segments())
 
+    @app.get("/api/fraud-detector/status")
+    def fraud_detector_status():
+        return jsonify({
+            "success": True,
+            "active_model": fraud_detector.active_model,
+            "decision_tree": {
+                "is_trained": fraud_detector.dt_is_trained,
+                "metrics": fraud_detector.dt_metrics
+            },
+            "random_forest": {
+                "is_trained": fraud_detector.rf_is_trained,
+                "metrics": fraud_detector.rf_metrics
+            }
+        })
+
+    @app.post("/api/fraud-detector/select-model")
+    @role_required("admin")
+    def select_model():
+        payload = request.get_json(silent=True) or {}
+        model_name = payload.get("model")
+        if model_name not in ["decision_tree", "random_forest"]:
+            return jsonify({"success": False, "error": "Invalid model name"}), 400
+        fraud_detector.active_model = model_name
+        return jsonify({"success": True, "active_model": fraud_detector.active_model})
+
+    @app.post("/api/fraud-detector/train")
+    @login_required
+    def fraud_detector_train():
+        payload = request.get_json(silent=True) or {}
+        model_name = payload.get("model")
+        
+        if model_name == "decision_tree":
+            success = fraud_detector.train_decision_tree()
+            metrics = fraud_detector.dt_metrics
+        elif model_name == "random_forest":
+            success = fraud_detector.train_random_forest()
+            metrics = fraud_detector.rf_metrics
+        else:
+            return jsonify({"success": False, "error": "Invalid model name."}), 400
+            
+        if success:
+            return jsonify({"success": True, "metrics": metrics})
+        return jsonify({"success": False, "error": "Lỗi khi huấn luyện mô hình."}), 500
+
+    @app.post("/api/fraud-detector/predict")
+    def fraud_detector_predict():
+        payload = request.get_json(silent=True) or {}
+        model_name = payload.get("model", "decision_tree")
+        
+        is_trained = fraud_detector.dt_is_trained if model_name == "decision_tree" else fraud_detector.rf_is_trained
+        if not is_trained:
+            return jsonify({"success": False, "error": "Mô hình chưa được huấn luyện."}), 503
+        
+        try:
+            amount = float(payload.get("amount", 0))
+            hour = int(payload.get("hour", 12))
+            is_weekend = int(payload.get("is_weekend", 0))
+            payment_method = str(payload.get("payment_method", "Ví điện tử"))
+            merchant_category = str(payload.get("merchant_category", "Ăn uống"))
+            location = str(payload.get("location", "Hà Nội"))
+            
+            result = fraud_detector.predict(
+                model_name=model_name,
+                amount=amount,
+                hour=hour,
+                is_weekend=is_weekend,
+                payment_method=payment_method,
+                merchant_category=merchant_category,
+                location=location
+            )
+            return jsonify({"success": True, "prediction": result})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 400
+
     @app.get("/api/sankey")
     def sankey_api():
         return jsonify(data_service.get_sankey_data(_build_filters()))
@@ -256,6 +332,7 @@ def create_app() -> Flask:
         return jsonify({"filename": data_service.csv_path.name})
 
     @app.post("/api/settings/change-dataset")
+    @role_required("admin")
     def change_dataset():
         target = request.json.get("target")
         base_path = Path(__file__).resolve().parent
@@ -265,10 +342,17 @@ def create_app() -> Flask:
             new_path = base_path / "vn_cashless_2026.csv"
         if new_path.exists():
             data_service.change_csv(new_path)
+            fraud_detector.csv_path = new_path
+            # Reset training state when dataset changes
+            fraud_detector.dt_is_trained = False
+            fraud_detector.rf_is_trained = False
+            fraud_detector.dt_pipeline = None
+            fraud_detector.rf_pipeline = None
             return jsonify({"success": True, "filename": new_path.name})
         return jsonify({"success": False, "error": "File not found"}), 404
 
     @app.post("/api/settings/upload-csv")
+    @role_required("admin")
     def upload_csv():
         if "file" not in request.files:
             return jsonify({"success": False, "error": "No file part"}), 400
@@ -279,6 +363,12 @@ def create_app() -> Flask:
             upload_path = Path(__file__).resolve().parent / "uploaded_data.csv"
             file.save(str(upload_path))
             data_service.change_csv(upload_path)
+            fraud_detector.csv_path = upload_path
+            # Reset training state when new CSV is uploaded
+            fraud_detector.dt_is_trained = False
+            fraud_detector.rf_is_trained = False
+            fraud_detector.dt_pipeline = None
+            fraud_detector.rf_pipeline = None
             return jsonify({"success": True, "filename": file.filename})
         return jsonify({"success": False, "error": "Invalid file format"}), 400
 

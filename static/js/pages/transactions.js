@@ -35,7 +35,6 @@ async function loadTable() {
       <td>${row.user_id}</td>
       <td>${formatCurrencyVnd(row.amount_vnd)}</td>
       <td>${row.timestamp}</td>
-      <td>${row.payment_method}</td>
       <td>${row.merchant_category}</td>
       <td>${row.location}</td>
     `;

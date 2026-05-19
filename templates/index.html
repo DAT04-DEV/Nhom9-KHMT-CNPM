@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Phân tích thanh toán không tiền mặt 2026{% endblock %}
+{% block title %}VIETCASH - Phân tích & phát hiện gian lận ví điện tử{% endblock %}
 
 {% block filter_bar %}
   <!-- Empty block: We place filters inside content for custom positioning on Home page -->
@@ -8,11 +8,11 @@
 
 {% block content %}
   <section class="hero glass">
-    <h1>Phân tích thanh toán không tiền mặt Việt Nam 2026</h1>
-    <p>Phân tích hành vi thanh toán không tiền mặt tại Việt Nam</p>
+    <h1>Hệ thống Phân tích & Phát hiện gian lận ví điện tử VIETCASH</h1>
+    <p>Phân tích hành vi giao dịch và phát hiện gian lận ví điện tử</p>
     <div class="btn-holder">
-      <a class="btn-primary" href="/dashboard">Khám phá bảng điều khiển</a>
-      <a class="btn-secondary" href="/insights">Xem nhận định AI</a>
+      <a class="btn-primary" href="/dashboard">Xem phân tích tổng quan</a>
+      <a class="btn-secondary" href="/insights" data-auth-required>Xem nhận định AI</a>
     </div>
   </section>
 
@@ -22,15 +22,11 @@
       <button class="loc-btn active" data-loc="">Tất cả</button>
       <button class="loc-btn" data-loc="Hà Nội">Hà Nội</button>
       <button class="loc-btn" data-loc="TP.HCM">TP.HCM</button>
-      <button class="loc-btn" data-loc="Bình Dương">Bình Dương</button>
       <button class="loc-btn" data-loc="Đà Nẵng">Đà Nẵng</button>
       <button class="loc-btn" data-loc="Hải Phòng">Hải Phòng</button>
       <button class="loc-btn" data-loc="Cần Thơ">Cần Thơ</button>
     </div>
     <div class="quick-dropdowns">
-      <select id="quickPaymentFilter" class="search-input dropdown-select">
-        <option value="">Tất cả thanh toán</option>
-      </select>
       <select id="quickCategoryFilter" class="search-input dropdown-select">
         <option value="">Tất cả ngành hàng</option>
       </select>
@@ -49,7 +45,7 @@
       <p id="totalTransactions" data-countup="integer">0</p>
     </article>
     <article class="stat-card glass">
-      <h3>Active users</h3>
+      <h3>Người dùng hoạt động</h3>
       <p id="monthlyActiveUsers" data-countup="integer">0</p>
     </article>
     <article class="stat-card glass">
@@ -63,12 +59,6 @@
       <h3>Xu hướng chi tiêu theo thời gian</h3>
       <div class="chart-square-wrap" style="aspect-ratio: 16/9; max-height: 350px;">
         <canvas id="trendChart"></canvas>
-      </div>
-    </article>
-    <article class="chart-card glass">
-      <h3>Phân bổ theo phương thức thanh toán</h3>
-      <div class="chart-square-wrap square">
-        <canvas id="paymentChart"></canvas>
       </div>
     </article>
     <article class="chart-card glass">
@@ -87,11 +77,6 @@
         <canvas id="funnelChart"></canvas>
       </div>
     </article>
-  </section>
-
-  <section class="insight-list glass" style="margin-top: 0;">
-    <h3>Nhận định AI</h3>
-    <ul id="insightItems"></ul>
   </section>
 {% endblock %}
 
