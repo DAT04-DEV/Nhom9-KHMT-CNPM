@@ -6,16 +6,13 @@ create table if not exists accounts (
     email citext not null unique,
     password_hash text not null,
     full_name text not null,
-    role text not null check (role in ('admin', 'merchant', 'user')),
+    role text not null check (role in ('admin', 'user')),
     merchant_id text,
     is_active boolean not null default true,
     token_version integer not null default 0,
     last_login_at timestamptz,
     created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now(),
-    constraint merchant_scope_required check (
-        role = 'admin' or merchant_id is not null
-    )
+    updated_at timestamptz not null default now()
 );
 
 create index if not exists idx_accounts_role on accounts(role);

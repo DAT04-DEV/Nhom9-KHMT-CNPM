@@ -12,7 +12,10 @@ async function api(url, options = {}) {
     const response = await fetch(url, options);
     const data = await response.json().catch(() => ({}));
     if (response.status === 401) {
-        window.location.href = "/login";
+        const publicPages = ["/", "/login", "/register"];
+        if (!publicPages.includes(window.location.pathname)) {
+            window.location.href = "/login";
+        }
         return null;
     }
     if (!response.ok) {
@@ -55,7 +58,6 @@ function renderProfile(account) {
         ["Email", account.email],
         ["Họ tên", account.full_name],
         ["Vai trò", account.role],
-        ["Merchant ID", account.merchant_id],
         ["Ngày tạo", account.created_at],
         ["Lần đăng nhập cuối", account.last_login_at],
     ];
@@ -80,7 +82,7 @@ async function loadMe() {
         scopeText.textContent =
             account.role === "admin"
                 ? "Admin có quyền xem toàn bộ dữ liệu."
-                : `${account.role} chỉ xem dữ liệu của Merchant ID: ${account.merchant_id}`;
+                : "User có quyền xem dữ liệu giao dịch.";
     }
     if (adminPanel && account.role === "admin") {
         adminPanel.classList.remove("hidden");
@@ -121,7 +123,7 @@ async function loadScopedTransactions() {
 
 logoutButton?.addEventListener("click", async () => {
     await api("/api/auth/logout", { method: "POST" }).catch(() => null);
-    window.location.href = "/login";
+    window.location.href = "/";
 });
 
 refreshAccounts?.addEventListener("click", loadAccounts);

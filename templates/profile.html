@@ -20,10 +20,6 @@
             <p id="profileEmail" style="font-size: 18px; color: var(--text);">-</p>
         </article>
         <article class="stat-card glass">
-            <h3>Merchant ID</h3>
-            <p id="profileMerchantId" style="font-size: 18px; color: var(--text);">-</p>
-        </article>
-        <article class="stat-card glass">
             <h3>Ngày tham gia</h3>
             <p id="profileCreatedAt" style="font-size: 18px; color: var(--text);">-</p>
         </article>
@@ -53,7 +49,6 @@
                 document.getElementById('profileFullName').textContent = user.full_name;
                 document.getElementById('profileRole').textContent = user.role;
                 document.getElementById('profileEmail').textContent = user.email;
-                document.getElementById('profileMerchantId').textContent = user.merchant_id || 'Không có';
                 document.getElementById('profileCreatedAt').textContent = new Date(user.created_at).toLocaleDateString('vi-VN', {
                     year: 'numeric', month: 'long', day: 'numeric',
                     hour: '2-digit', minute: '2-digit'

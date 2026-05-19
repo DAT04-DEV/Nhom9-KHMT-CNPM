@@ -16,6 +16,7 @@ from auth import (
     invalidate_tokens,
     json_error,
     login_required,
+    page_login_required,
     register_account,
     role_required,
     scoped_transactions_query,
@@ -60,19 +61,18 @@ def create_app() -> Flask:
 
     @app.get("/")
     def home():
-        """Trang chủ: nếu đã đăng nhập thì vào dashboard, chưa thì vào login."""
-        account = get_current_account()
-        if account:
-            return render_template("index.html")
-        return redirect(url_for("login_page"))
+        """Trang chủ: luôn hiển thị, trạng thái đăng nhập do JS xử lý."""
+        return render_template("index.html")
 
     @app.get("/login")
     def login_page():
-        return render_template("login.html")
+        """Trang login đã được tích hợp vào modal — redirect về trang chủ."""
+        return redirect(url_for("home"), 301)
 
     @app.get("/register")
     def register_page():
-        return render_template("register.html")
+        """Trang register đã được tích hợp vào modal — redirect về trang chủ."""
+        return redirect(url_for("home"), 301)
 
     @app.get("/profile")
     def profile_page():
@@ -91,10 +91,12 @@ def create_app() -> Flask:
         return render_template("transactions.html")
 
     @app.get("/predictions")
+    @page_login_required
     def predictions_page():
         return render_template("predictions.html")
 
     @app.get("/insights")
+    @page_login_required
     def insights_page():
         return render_template("insights.html")
 

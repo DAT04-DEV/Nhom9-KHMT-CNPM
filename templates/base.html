@@ -14,6 +14,101 @@
     <script defer src="{{ url_for('static', filename='js/site.js') }}"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     {% block head_extra %}{% endblock %}
+    <style>
+      /* ── Auth Modal ── */
+      .auth-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: rgba(0,0,0,0.65);
+        backdrop-filter: blur(6px);
+        align-items: center;
+        justify-content: center;
+      }
+      .auth-modal-overlay.open { display: flex; }
+      .auth-modal-box {
+        background: var(--surface, #16162a);
+        border: 1px solid var(--border, #2e2e4a);
+        border-radius: 20px;
+        padding: 2.5rem 2rem 2rem;
+        width: 100%;
+        max-width: 420px;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+        animation: modalIn .22s ease;
+        position: relative;
+      }
+      @keyframes modalIn {
+        from { opacity:0; transform: translateY(-18px) scale(.97); }
+        to   { opacity:1; transform: translateY(0) scale(1); }
+      }
+      .auth-modal-close {
+        position: absolute; top: 1rem; right: 1rem;
+        background: none; border: none; cursor: pointer;
+        color: var(--muted, #888); font-size: 1.4rem; line-height:1;
+        padding: 4px 8px; border-radius: 6px;
+        transition: background .15s, color .15s;
+      }
+      .auth-modal-close:hover { background: var(--border,#333); color: var(--text,#eee); }
+      .auth-tabs {
+        display: flex; gap: 0; margin-bottom: 1.8rem;
+        border-bottom: 2px solid var(--border,#2e2e4a);
+      }
+      .auth-tab {
+        flex: 1; padding: .75rem 0; font-size: 1.05rem; font-weight: 600;
+        background: none; border: none; cursor: pointer;
+        color: var(--muted,#888);
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: color .2s, border-color .2s;
+      }
+      .auth-tab.active { color: var(--primary,#7c6fff); border-color: var(--primary,#7c6fff); }
+      .auth-panel-section { display: none; }
+      .auth-panel-section.active { display: block; }
+      .auth-form-label {
+        display: flex; flex-direction: column; gap: .4rem;
+        margin-bottom: 1rem; font-size: 1rem; font-weight: 600;
+        color: #111;
+      }
+      .auth-form-label input, .auth-form-label select {
+        padding: .7rem 1rem;
+        background: var(--bg,#0f0f1a);
+        border: 1px solid var(--border,#2e2e4a);
+        border-radius: 10px;
+        color: var(--text,#eee);
+        font-size: 1rem;
+        transition: border-color .2s, box-shadow .2s;
+        outline: none;
+      }
+      .auth-form-label input:focus, .auth-form-label select:focus {
+        border-color: var(--primary,#7c6fff);
+        box-shadow: 0 0 0 3px rgba(124,111,255,.15);
+      }
+      .auth-form-label.hidden { display: none; }
+      .auth-submit-btn {
+        width: 100%; padding: .85rem;
+        background: var(--primary,#7c6fff);
+        color: #fff; border: none; border-radius: 10px;
+        font-size: 1.05rem; font-weight: 700;
+        cursor: pointer; margin-top: .5rem;
+        transition: opacity .2s, transform .1s;
+      }
+      .auth-submit-btn:hover { opacity: .9; }
+      .auth-submit-btn:active { transform: scale(.98); }
+      .auth-submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+      .auth-msg {
+        margin: .75rem 0 0; font-size: .95rem;
+        min-height: 1.2em; text-align: center;
+        color: var(--danger,#ff6b6b);
+      }
+      .auth-msg.success { color: #4ade80; }
+      .auth-modal-brand {
+        text-align: center; margin-bottom: 1.5rem;
+      }
+      .auth-modal-brand .brand-icon { font-size: 2.2rem; }
+      .auth-modal-brand h2 { margin: .3rem 0 .1rem; font-size: 1.25rem; }
+      .auth-modal-brand p { color: var(--muted,#888); font-size: .85rem; margin: 0; }
+    </style>
   </head>
   <body>
     <header class="topbar">
@@ -42,8 +137,9 @@
             <span id="userDisplayName" style="font-size:13px; font-weight:600; color: var(--muted);"></span>
             <button id="logoutBtn" class="btn-secondary" type="button" style="font-size:13px; padding: 6px 14px; color: var(--danger); border-color: var(--danger);">Đăng xuất</button>
           </div>
+          <!-- Login button (shown when NOT logged in) -->
           <div id="loginBtnBar" style="display:none;">
-            <a href="/login" class="btn-primary" style="font-size:13px; padding: 6px 14px;">Đăng nhập</a>
+            <button id="openAuthModal" class="btn-primary" type="button" style="font-size:13px; padding: 6px 16px;">Đăng nhập</button>
           </div>
         </div>
       </div>
@@ -60,43 +156,127 @@
         <a href="/dashboard">Bảng điều khiển</a>
         <a href="/users">Phân tích người dùng</a>
         <a href="/transactions">Giao dịch</a>
-        <a href="/predictions">Dự đoán</a>
-        <a href="/insights">Nhận định AI</a>
+        <a href="/predictions" data-auth-required>Dự đoán</a>
+        <a href="/insights" data-auth-required>Nhận định AI</a>
         <a href="/about">Giới thiệu</a>
         <a href="/profile">Hồ sơ cá nhân</a>
       </nav>
     </div>
     <div id="drawerOverlay" class="drawer-overlay"></div>
 
+    <!-- ══════════════ AUTH MODAL ══════════════ -->
+    <div id="authModal" class="auth-modal-overlay" role="dialog" aria-modal="true" aria-label="Đăng nhập / Đăng ký">
+      <div class="auth-modal-box">
+        <button class="auth-modal-close" id="closeAuthModal" title="Đóng">✕</button>
+
+        <div class="auth-modal-brand">
+          <div class="brand-icon">🛡️</div>
+          <h2>FraudDetect VN</h2>
+          <p>Phân tích & phát hiện giao dịch bất thường</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-tab="login" id="tabLogin">Đăng nhập</button>
+          <button class="auth-tab" data-tab="register" id="tabRegister">Đăng ký</button>
+        </div>
+
+        <!-- Login Panel -->
+        <div class="auth-panel-section active" id="panelLogin">
+          <form id="modalLoginForm" autocomplete="on" novalidate>
+            <label class="auth-form-label">
+              Email
+              <input name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+            </label>
+            <label class="auth-form-label">
+              Mật khẩu
+              <input name="password" type="password" autocomplete="current-password" placeholder="••••••••" required>
+            </label>
+            <p class="auth-msg" id="loginMsg" aria-live="polite"></p>
+            <button type="submit" class="auth-submit-btn" id="loginSubmitBtn">Đăng nhập</button>
+          </form>
+        </div>
+
+        <!-- Register Panel -->
+        <div class="auth-panel-section" id="panelRegister">
+          <form id="modalRegisterForm" autocomplete="on" novalidate>
+            <label class="auth-form-label">
+              Họ tên
+              <input name="full_name" type="text" autocomplete="name" placeholder="Nguyễn Văn A" required>
+            </label>
+            <label class="auth-form-label">
+              Email
+              <input name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+            </label>
+            <label class="auth-form-label">
+              Mật khẩu
+              <input id="regPassword" name="password" type="password" autocomplete="new-password" placeholder="••••••••" minlength="8" required>
+            </label>
+            <label class="auth-form-label">
+              Xác nhận mật khẩu
+              <input id="regConfirmPassword" type="password" autocomplete="new-password" placeholder="••••••••" required>
+            </label>
+            <label class="auth-form-label">
+              Vai trò
+              <select name="role" id="modalRoleSelect">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </label>
+            <label class="auth-form-label hidden" id="modalInviteField">
+              Mã mời Admin
+              <input name="invite_code" type="password" placeholder="Nhập mã mời">
+            </label>
+            <p class="auth-msg" id="registerMsg" aria-live="polite"></p>
+            <button type="submit" class="auth-submit-btn" id="registerSubmitBtn">Tạo tài khoản</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- ══════════════ END AUTH MODAL ══════════════ -->
+
+    <!-- Auth-gate modal (protected pages) -->
+    <div id="authGateModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center;">
+      <div style="background:var(--surface,#1e1e2e); border:1px solid var(--border,#333); border-radius:16px; padding:2.5rem 2rem; max-width:380px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+        <div style="font-size:3rem; margin-bottom:1rem;">🔒</div>
+        <h2 style="margin:0 0 0.5rem; font-size:1.3rem;">Yêu cầu đăng nhập</h2>
+        <p style="color:var(--muted,#888); margin:0 0 1.5rem; font-size:0.95rem;">Tính năng <strong id="authGateFeatureName"></strong> chỉ dành cho người dùng đã đăng nhập.</p>
+        <div style="display:flex; gap:0.75rem; justify-content:center;">
+          <button id="authGateCancel" style="padding:0.6rem 1.4rem; border-radius:8px; border:1px solid var(--border,#444); background:transparent; color:var(--text,#eee); cursor:pointer; font-size:0.9rem;">Để sau</button>
+          <button id="authGateOpenLogin" style="padding:0.6rem 1.4rem; border-radius:8px; background:var(--primary,#7c6fff); color:#fff; border:none; font-weight:600; font-size:0.9rem; cursor:pointer;">Đăng nhập ngay →</button>
+        </div>
+      </div>
+    </div>
+
     <main class="page-shell">
       {% block filter_bar %}{% endblock %}
       {% block content %}{% endblock %}
     </main>
+
     <script>
-      // Highlight active menu item
       document.addEventListener('DOMContentLoaded', () => {
+        // ── Active menu highlight ──────────────────────
         const path = window.location.pathname;
-        const menuLinks = document.querySelectorAll('#mainMenu a');
-        menuLinks.forEach(link => {
-          if (link.getAttribute('href') === path) {
-            link.classList.add('active');
-          } else {
-            link.classList.remove('active');
-          }
+        document.querySelectorAll('#mainMenu a').forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === path);
         });
 
-        // Auth UI: check who's logged in
+        // ── Auth state ────────────────────────────────
+        let _isLoggedIn = false;
+        let _pendingDest = null;
+
         fetch('/api/me', { credentials: 'include' })
           .then(r => r.ok ? r.json() : null)
           .then(data => {
-            const userBar = document.getElementById('userInfoBar');
-            const loginBar = document.getElementById('loginBtnBar');
-            const nameSpan = document.getElementById('userDisplayName');
             if (data && data.ok) {
-              if (userBar) { userBar.style.display = 'flex'; }
-              if (nameSpan) { nameSpan.textContent = data.account.full_name + ' (' + data.account.role + ')'; }
+              _isLoggedIn = true;
+              const userBar = document.getElementById('userInfoBar');
+              const nameSpan = document.getElementById('userDisplayName');
+              if (userBar) userBar.style.display = 'flex';
+              if (nameSpan) nameSpan.textContent = data.account.full_name + ' (' + data.account.role + ')';
             } else {
-              if (loginBar) { loginBar.style.display = 'block'; }
+              const loginBar = document.getElementById('loginBtnBar');
+              if (loginBar) loginBar.style.display = 'block';
             }
           })
           .catch(() => {
@@ -104,14 +284,143 @@
             if (loginBar) loginBar.style.display = 'block';
           });
 
-        // Logout button
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-          logoutBtn.addEventListener('click', async () => {
-            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-            window.location.href = '/login';
-          });
+        // ── Logout ────────────────────────────────────
+        document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+          await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+          window.location.href = '/';
+        });
+
+        // ── Auth Modal open/close ─────────────────────
+        const authModal = document.getElementById('authModal');
+        function openAuthModal(tab = 'login') {
+          authModal.classList.add('open');
+          switchTab(tab);
+          document.body.style.overflow = 'hidden';
         }
+        function closeAuthModal() {
+          authModal.classList.remove('open');
+          document.body.style.overflow = '';
+          _pendingDest = null;
+        }
+
+        document.getElementById('openAuthModal')?.addEventListener('click', () => openAuthModal('login'));
+        document.getElementById('closeAuthModal')?.addEventListener('click', closeAuthModal);
+        authModal?.addEventListener('click', e => { if (e.target === authModal) closeAuthModal(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAuthModal(); });
+
+        // ── Tabs ──────────────────────────────────────
+        function switchTab(tab) {
+          document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+          document.querySelectorAll('.auth-panel-section').forEach(p => p.classList.remove('active'));
+          document.getElementById(tab === 'login' ? 'panelLogin' : 'panelRegister')?.classList.add('active');
+        }
+        document.querySelectorAll('.auth-tab').forEach(btn => {
+          btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+
+        // ── Role select (register) ────────────────────
+        const roleSelect = document.getElementById('modalRoleSelect');
+        const inviteField = document.getElementById('modalInviteField');
+        function syncRoleUI() {
+          if (!roleSelect) return;
+          inviteField?.classList.toggle('hidden', roleSelect.value !== 'admin');
+        }
+        roleSelect?.addEventListener('change', syncRoleUI);
+        syncRoleUI();
+
+        // ── helpers ───────────────────────────────────
+        function setMsg(elId, text, isSuccess = false) {
+          const el = document.getElementById(elId);
+          if (!el) return;
+          el.textContent = text;
+          el.className = 'auth-msg' + (isSuccess ? ' success' : '');
+        }
+        function formData(form) {
+          return Object.fromEntries(new FormData(form).entries());
+        }
+        async function postJson(url, body) {
+          const r = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(data.error || 'Yêu cầu thất bại.');
+          return data;
+        }
+
+        // ── Login form ────────────────────────────────
+        document.getElementById('modalLoginForm')?.addEventListener('submit', async e => {
+          e.preventDefault();
+          const btn = document.getElementById('loginSubmitBtn');
+          btn.disabled = true;
+          setMsg('loginMsg', '');
+          try {
+            await postJson('/api/auth/login', formData(e.target));
+            closeAuthModal();
+            if (_pendingDest) {
+              window.location.href = _pendingDest;
+            } else {
+              window.location.reload();
+            }
+          } catch (err) {
+            setMsg('loginMsg', err.message);
+          } finally {
+            btn.disabled = false;
+          }
+        });
+
+        // ── Register form ─────────────────────────────
+        document.getElementById('modalRegisterForm')?.addEventListener('submit', async e => {
+          e.preventDefault();
+          const btn = document.getElementById('registerSubmitBtn');
+          // Kiểm tra mật khẩu xác nhận
+          const pwd = document.getElementById('regPassword')?.value || '';
+          const confirmPwd = document.getElementById('regConfirmPassword')?.value || '';
+          if (pwd !== confirmPwd) {
+            setMsg('registerMsg', '❌ Mật khẩu xác nhận không khớp.');
+            return;
+          }
+          btn.disabled = true;
+          setMsg('registerMsg', '');
+          try {
+            await postJson('/api/auth/register', formData(e.target));
+            setMsg('registerMsg', '✅ Tạo tài khoản thành công! Đang đăng nhập...', true);
+            setTimeout(() => { closeAuthModal(); window.location.reload(); }, 1000);
+          } catch (err) {
+            setMsg('registerMsg', err.message);
+          } finally {
+            btn.disabled = false;
+          }
+        });
+
+        // ── Auth-gate (protected links) ───────────────
+        const authGateModal = document.getElementById('authGateModal');
+        const featureName   = document.getElementById('authGateFeatureName');
+        const featureLabels = { '/predictions': 'Dự đoán AI', '/insights': 'Hỏi dữ liệu / Nhận định AI' };
+
+        document.querySelectorAll('[data-auth-required]').forEach(link => {
+          link.addEventListener('click', e => {
+            if (_isLoggedIn) return;
+            e.preventDefault();
+            const dest = link.getAttribute('href');
+            _pendingDest = dest;
+            if (featureName) featureName.textContent = featureLabels[dest] || dest;
+            authGateModal.style.display = 'flex';
+          });
+        });
+
+        document.getElementById('authGateCancel')?.addEventListener('click', () => {
+          authGateModal.style.display = 'none';
+          _pendingDest = null;
+        });
+        document.getElementById('authGateOpenLogin')?.addEventListener('click', () => {
+          authGateModal.style.display = 'none';
+          openAuthModal('login');
+        });
+        authGateModal?.addEventListener('click', e => {
+          if (e.target === authGateModal) { authGateModal.style.display = 'none'; _pendingDest = null; }
+        });
       });
     </script>
     {% block scripts %}{% endblock %}

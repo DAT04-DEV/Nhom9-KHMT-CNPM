@@ -2,7 +2,6 @@ const formMessage = document.querySelector("#formMessage");
 const loginForm = document.querySelector("#loginForm");
 const registerForm = document.querySelector("#registerForm");
 const roleSelect = document.querySelector("#roleSelect");
-const merchantField = document.querySelector("#merchantField");
 const inviteField = document.querySelector("#inviteField");
 
 function setMessage(text, isSuccess = false) {
@@ -31,7 +30,6 @@ function formToObject(form) {
 function syncRoleFields() {
     if (!roleSelect) return;
     const isAdmin = roleSelect.value === "admin";
-    merchantField?.classList.toggle("hidden", isAdmin);
     inviteField?.classList.toggle("hidden", !isAdmin);
 }
 
@@ -45,7 +43,9 @@ loginForm?.addEventListener("submit", async (event) => {
     setMessage("");
     try {
         await postJson("/api/auth/login", formToObject(loginForm));
-        window.location.href = "/";
+        const params = new URLSearchParams(window.location.search);
+        const next = params.get("next");
+        window.location.href = next && next.startsWith("/") ? next : "/";
     } catch (error) {
         setMessage(error.message);
     } finally {

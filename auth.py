@@ -13,8 +13,8 @@ from config import config
 from db import execute, fetch_one
 
 
-ALLOWED_ROLES = {"admin", "merchant", "user"}
-PUBLIC_REGISTRATION_ROLES = {"merchant", "user"}
+ALLOWED_ROLES = {"admin", "user"}
+PUBLIC_REGISTRATION_ROLES = {"user"}
 
 
 def json_error(message: str, status: int) -> tuple[Response, int]:
@@ -76,23 +76,22 @@ def get_current_account() -> dict[str, Any] | None:
             algorithms=["HS256"],
             issuer=config.jwt_issuer,
         )
-    except jwt.PyJWTError:
+        account = fetch_one(
+            """
+            select id, email, full_name, role, merchant_id, is_active, token_version,
+                   created_at, last_login_at
+            from accounts
+            where id = %s
+            """,
+            (payload.get("sub"),),
+        )
+        if not account or not account["is_active"]:
+            return None
+        if account["token_version"] != payload.get("token_version"):
+            return None
+        return account
+    except Exception:
         return None
-
-    account = fetch_one(
-        """
-        select id, email, full_name, role, merchant_id, is_active, token_version,
-               created_at, last_login_at
-        from accounts
-        where id = %s
-        """,
-        (payload.get("sub"),),
-    )
-    if not account or not account["is_active"]:
-        return None
-    if account["token_version"] != payload.get("token_version"):
-        return None
-    return account
 
 
 def login_required(fn: Callable) -> Callable:
@@ -101,6 +100,21 @@ def login_required(fn: Callable) -> Callable:
         account = get_current_account()
         if not account:
             return json_error("Authentication required.", 401)
+        g.account = account
+        return fn(*args, **kwargs)
+
+    return wrapper
+
+
+def page_login_required(fn: Callable) -> Callable:
+    """Decorator cho page routes: redirect về / nếu chưa đăng nhập (login qua modal)."""
+    from flask import redirect, request
+
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        account = get_current_account()
+        if not account:
+            return redirect("/")
         g.account = account
         return fn(*args, **kwargs)
 
@@ -140,7 +154,6 @@ def register_account(payload: dict[str, Any]) -> tuple[dict[str, Any] | None, st
     password = payload.get("password") or ""
     full_name = (payload.get("full_name") or "").strip()
     role = (payload.get("role") or "user").strip().lower()
-    merchant_id = (payload.get("merchant_id") or "").strip() or None
     invite_code = payload.get("invite_code") or ""
 
     if not email or "@" not in email:
@@ -156,14 +169,12 @@ def register_account(payload: dict[str, Any]) -> tuple[dict[str, Any] | None, st
             return None, "Admin registration requires a valid invite code.", 403
     elif role not in PUBLIC_REGISTRATION_ROLES:
         return None, "Invalid public registration role.", 400
-    if role != "admin" and not merchant_id:
-        return None, "Merchant ID is required for merchant/user accounts.", 400
 
     try:
         account = execute(
             """
-            insert into accounts (email, password_hash, full_name, role, merchant_id)
-            values (%s, %s, %s, %s, %s)
+            insert into accounts (email, password_hash, full_name, role)
+            values (%s, %s, %s, %s)
             returning id, email, full_name, role, merchant_id, is_active,
                       token_version, created_at, last_login_at
             """,
@@ -172,7 +183,6 @@ def register_account(payload: dict[str, Any]) -> tuple[dict[str, Any] | None, st
                 generate_password_hash(password),
                 full_name,
                 role,
-                merchant_id,
             ),
         )
     except errors.UniqueViolation:
@@ -221,14 +231,5 @@ def scoped_transactions_query(account: dict[str, Any]) -> tuple[str, tuple[Any, 
         select *
         from transactions
     """
-    if account["role"] == "admin":
-        return base_sql + " order by transaction_time desc limit 100", ()
-    return (
-        base_sql
-        + """
-        where merchant_id = %s
-        order by transaction_time desc
-        limit 100
-        """,
-        (account["merchant_id"],),
-    )
+    # Admin xem toàn bộ; user thông thường cũng xem toàn bộ (không còn phân scope theo merchant)
+    return base_sql + " order by transaction_time desc limit 100", ()
